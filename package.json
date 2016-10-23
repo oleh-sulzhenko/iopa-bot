@@ -10,7 +10,7 @@
       "email": "build@iopa.io"
     }
   ],
-  "version": "1.4.2",
+  "version": "1.4.3",
   "repository": {
     "type": "git",
     "url": "https://github.com/iopa-io/iopa-bot.git"
@@ -38,11 +38,11 @@
     "prepublish": "rm -rf node_modules/iopa-bot && require-self",
     "quick": "git add . -A && git commit -m 'dev test' && npm version patch && npm publish",
     "typings": "tsd reinstall --overwrite --clean --config tools/tsd.json && tsd link"
-  }, 
+  },
   "devDependencies": {
     "iopa-bot-console": "^1.4.1",
-     "require-self": "^0.x"
-   },
+    "require-self": "^0.x"
+  },
   "devDependencies_unused": {
     "mocha": "^2.3.2",
     "mocha-junit-reporter": "^1.6.1",
