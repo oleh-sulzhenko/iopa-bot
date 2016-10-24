@@ -80,15 +80,16 @@ function SessionMiddleware(app) {
 module.exports = SessionMiddleware;
 
 SessionMiddleware.prototype.invoke = function (context, next) {
+    var sessiondb = this.app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Session];
     if (!context[BOT.Session]  && context[BOT.Address] && context[BOT.Address][BOT.User])
-      return this.app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Session].get(context[BOT.Address][BOT.User])
+      return sessiondb.get(context[BOT.Address][BOT.User])
         .then(function(session){ context[BOT.Session] = session;  })
         .then(next)
         .then(function(){
             if (context.response[BOT.ShouldEndSession]) 
-              this.app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Session]["delete"](context[BOT.Session].id);
+              sessiondb["delete"](context[BOT.Session].id);
             else
-              this.app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Session].put(context[BOT.Session]);
+              sessiondb.put(context[BOT.Session]);
         });
     
     else return next();
