@@ -23,6 +23,9 @@ const iopa = require('iopa'),
 
 module.exports = function parseIntent(context, next) {
 
+    if (!context[BOT.Session])
+      return next();
+
     var intentFunc = null;
     var session = context[BOT.Session];
     context[BOT.Slots] = {};
