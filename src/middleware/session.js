@@ -19,8 +19,7 @@ const iopa = require('iopa'),
     constants = iopa.constants,
     IOPA = constants.IOPA,
     SERVER = constants.SERVER,
-    BOT = require('../constants').BOT,
-    path = require('path');
+    BOT = require('../constants').BOT;
 
 function SessionMiddleware(app) {
 
@@ -34,7 +33,7 @@ function SessionMiddleware(app) {
     app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Session] = {
         get: function (id, timeout) {
 
-            var dbpath = path.join("sessions", id);
+            var dbpath = "sessions/" + id;
             return db.get(dbpath).then(function (session) {
                 if (!session) {
                     session = {
@@ -62,13 +61,13 @@ function SessionMiddleware(app) {
 
        },
        put : function (session) {
-           var dbpath = path.join("sessions", session.id);
+           var dbpath = "sessions/" + session.id;
            session.updated = new Date().getTime();
            db.put(dbpath, session);
            return Promise.resolve(null);
        },
        "delete" : function (id) {
-           var dbpath = path.join("sessions", id);
+           var dbpath = "sessions/" + id;
            db.put(dbpath, null);
            return Promise.resolve(null);
        }

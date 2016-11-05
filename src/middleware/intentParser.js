@@ -21,9 +21,6 @@ const iopa = require('iopa'),
   SERVER = constants.SERVER, 
   BOT = require('../constants').BOT;
 
-  var util = require('util');
-
-
 module.exports = function parseIntent(context, next) {
 
     var intentFunc = null;
