@@ -23,9 +23,15 @@ const iopa = require('iopa'),
   SERVER = constants.SERVER, 
   BOT = require('../constants').BOT;
 
-function IopaSkill(name) {
+function IopaSkill(name, global) {
 
     this.name = name;
+
+    // global skills are always used in parsing;  non-global only parsed when launched
+    if ((global === true) || (global === false))
+       this.global = global;
+    else
+        this.global = true;
 
     this.messages = {
         // When an intent was passed in that the skill was not configured to handle

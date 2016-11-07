@@ -16,37 +16,64 @@
  */
 
 const iopa = require('iopa'),
-  constants = iopa.constants,
-  IOPA = constants.IOPA,
-  SERVER = constants.SERVER, 
-  BOT = require('../constants').BOT;
+    constants = iopa.constants,
+    IOPA = constants.IOPA,
+    SERVER = constants.SERVER,
+    BOT = require('../constants').BOT;
 
 module.exports = function parseIntent(context, next) {
 
+    // Ensure this context record is actually a valid (bot) message 
     if (!context[BOT.Session])
-      return next();
+        return next();
 
-    var intentFunc = null;
     var session = context[BOT.Session];
-    context[BOT.Slots] = {};
-
     var skills = context[SERVER.Capabilities][BOT.CAPABILITIES.Skills].skills;
 
+    context[BOT.Slots] = {};
+
+    var skill;
+
+    // FIRST CHECK CURRENT SKILL (IF IN SESSION)
+    if (session[BOT.Skill]) {
+        skill = skills[session[BOT.Skill]];
+
+        if (parseSkillIntents(skill, context)) {
+            session[BOT.NewSession] = false;
+            session[BOT.Skill] = skill.name;
+            return invokeIntent(context, next);
+        }
+    }
+
+    // CHECK DEFAULT SKILL (IF DIFFERENT)
+    if (session[BOT.Skill] != 'default') {
+        skill = skills['default'];
+
+        if (parseSkillIntents(skill, context)) {
+            session[BOT.NewSession] = false;
+            session[BOT.Skill] = skill.name;
+            return invokeIntent(context, next);
+        }
+    }
+
+    // CHECK ALL OTHER GLOBAL SKILLS
     for (var key in skills) {
 
         var skill = skills[key];
 
-        if (parseSkillIntents(skill, context)) {
+        if (skill.global && (skill.name != 'default') && (skill.name != session[BOT.Skill])) {
+            if (parseSkillIntents(skill, context)) {
 
-            if (!session[BOT.Skill]) {  // TODO MAYBE CHECK FOR != PRIOR SKILL
-                session[BOT.NewSession] = true;
-            } else {
-                session[BOT.NewSession] = false;
+                if (!session[BOT.Skill]) {  
+                    session[BOT.NewSession] = true;
+                } else {
+                    session[BOT.NewSession] = false;
+                }
+
+                session[BOT.Skill] = skill.name;
+
+                break;
             }
-
-            session[BOT.Skill] = skill.name;
-
-            break;
         }
     }
 
@@ -57,10 +84,9 @@ module.exports = function parseIntent(context, next) {
 function parseSkillIntents(skill, context) {
 
     var result = false;
-     var input = context[BOT.Text];
+    var input = context[BOT.Text];
 
-    if (context[BOT.Intent] == 'urn:io.iopa.bot:intent:literal')
-    {
+    if (context[BOT.Intent] == 'urn:io.iopa.bot:intent:literal') {
         // Go through each intent in the skill to find a valid response.
         for (var i in Object.keys(skill.intents)) {
             var key = Object.keys(skill.intents)[i];
@@ -68,9 +94,8 @@ function parseSkillIntents(skill, context) {
             if (result)
                 break;
         }
-    } else
-    {
-         result = _matchUtterancesForIntent(skill, context, context[BOT.Intent]);
+    } else {
+        result = _matchUtterancesForIntent(skill, context, context[BOT.Intent]);
     }
 
     return result;
@@ -78,9 +103,9 @@ function parseSkillIntents(skill, context) {
 
 function invokeIntent(context, next) {
     var session = context[BOT.Session];
-   
+
     if (!session[BOT.Skill])
-      return next();
+        return next();
 
     var skills = context[SERVER.Capabilities][BOT.CAPABILITIES.Skills].skills;
 
@@ -89,7 +114,7 @@ function invokeIntent(context, next) {
     if (intent && intent["function"])
         return intent["function"](context, next);
 
-     return next();
+    return next();
 };
 
 
@@ -111,15 +136,14 @@ function _matchUtterancesForIntent(skill, context, intentkey) {
         }
     });
 
-    if (!skill.intents[intentkey])
-    {
-         if (intentkey != BOT.INTENTS.Launch)
-           context.log("Missing Schema for intent " + intentkey);
-         return false;
+    if (!skill.intents[intentkey]) {
+        if (intentkey != BOT.INTENTS.Launch)
+            context.log("Missing Schema for intent " + intentkey);
+        return false;
     }
 
     var slots = skill.intents[intentkey].schema ? skill.intents[intentkey].schema.slots : null;
-     var result = _parseText(input, utterances, skill.intents[intentkey].schema.slots);
+    var result = _parseText(input, utterances, skill.intents[intentkey].schema.slots);
 
     if (result.isValid) {
         var session = context[BOT.Session];
@@ -130,7 +154,7 @@ function _matchUtterancesForIntent(skill, context, intentkey) {
             context[BOT.Slots][pair.name] = pair.value;
         };
     }
-    
+
     return result.isValid;
 }
 
@@ -143,7 +167,7 @@ function _parseText(text, utterances, slots) {
         result = { isValid: true, pairs: [] };
 
         if (template && template.length > 0) {
-          
+
             // Remove leading and trailing periods.
             text = text.replace(/(^\.+)|(\.+$)/g, '');
 
@@ -156,7 +180,7 @@ function _parseText(text, utterances, slots) {
                     var token = tokens[i];
                     var word = words[i];
 
-                     if (token.toLowerCase() != word.toLowerCase()) {
+                    if (token.toLowerCase() != word.toLowerCase()) {
                         // A word doesn't match, but is it a variable?
                         var tokenParts = token.match(/{([a-zA-Z0-9\_]+)\|([a-zA-Z0-9]+)}/);
                         if (tokenParts && tokenParts.length == 3) {
