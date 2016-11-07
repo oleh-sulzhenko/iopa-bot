@@ -103,12 +103,14 @@ function parseSkillIntents(skill, context) {
 
 function invokeIntent(context, next) {
     var session = context[BOT.Session];
-
-    if (!session[BOT.Skill])
-        return next();
-
+  
     var skills = context[SERVER.Capabilities][BOT.CAPABILITIES.Skills].skills;
 
+    if (!session[BOT.Skill])
+    {
+       session[BOT.Skill] = 'default'
+    }
+      
     var intent = skills[session[BOT.Skill]].intents[context[BOT.Intent]];
 
     if (intent && intent["function"])
