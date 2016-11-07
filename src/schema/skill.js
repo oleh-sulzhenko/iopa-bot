@@ -53,7 +53,7 @@ function IopaSkill(name) {
     // Unlike alexa-app, no SessionEnded hook, just register Intent handler of "urn:io.iopa.bot:sessionended"
 }
 
-Iopa.Skill.prototype.global = function(flag) {
+IopaSkill.prototype.global = function(flag) {
     // global skills are always used in parsing;  non-global only parsed when launched
     this.global = flag;
     return this;
