@@ -34,9 +34,9 @@ function SkillsManager(app) {
         timeout: 300000, // session timeout in milliseconds, 0 to disable
         skills: {},
 
-        add: function (name, global) {
+        add: function (name) {
             if (!this.skills[name])
-                this.skills[name] = new Skill(name, global);
+                this.skills[name] = new Skill(name);
             return this.skills[name];
         },
 
@@ -52,13 +52,9 @@ function SkillsManager(app) {
     app.intent = this.defaultSkill.intent.bind(this.defaultSkill);
     app.dictionary = this.defaultSkill.dictionary.bind(this.defaultSkill);
 
-    app.skill = function(name, global) {
+    app.skill = function(name) {
          name = name || 'default';
-         var skill = app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Skills].add(name);
-         if ((global === true) || (global === false)) skill.global = global;
-         app.intent = skill.intent.bind(skill);
-         app.dictionary = skill.dictionary.bind(skill);
-         return skill;
+         return app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Skills].add(name);
     }
 
     app.use(sessionMiddleware);

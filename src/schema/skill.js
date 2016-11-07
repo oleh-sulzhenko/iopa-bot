@@ -23,15 +23,12 @@ const iopa = require('iopa'),
   SERVER = constants.SERVER, 
   BOT = require('../constants').BOT;
 
-function IopaSkill(name, global) {
+function IopaSkill(name) {
 
     this.name = name;
 
     // global skills are always used in parsing;  non-global only parsed when launched
-    if ((global === true) || (global === false))
-       this.global = global;
-    else
-        this.global = true;
+    this.global = true;
 
     this.messages = {
         // When an intent was passed in that the skill was not configured to handle
@@ -56,6 +53,12 @@ function IopaSkill(name, global) {
     // Unlike alexa-app, no SessionEnded hook, just register Intent handler of "urn:io.iopa.bot:sessionended"
 }
 
+Iopa.Skill.prototype.global = function(flag) {
+    // global skills are always used in parsing;  non-global only parsed when launched
+    this.global = flag;
+    return this;
+}
+
 IopaSkill.prototype.intent = function (intentName, schema, func) {
     if (typeof schema == "function") {
         func = schema;
@@ -68,18 +71,22 @@ IopaSkill.prototype.intent = function (intentName, schema, func) {
     if (schema) {
         this.intents[intentName].schema = schema;
     }
+    return this;
 };
 
 IopaSkill.prototype.dictionary = function (obj2) {
     for (var attrname in obj2) { this.dictionary[attrname] = obj2[attrname]; }
+    return this;
 };
 
 IopaSkill.prototype.launch = function (func) {
     this.intent(BOT.INTENTS.Launch, func);
+    return this;
 };
 
 IopaSkill.prototype.sessionEnded = function (func) {
    this.intent(BOT.INTENTS.SessionEnded, func);
+   return this;
 };
 
 // Helper Function to extract the schema and generate a schema JSON object
