@@ -143,7 +143,7 @@ function _matchUtterancesForIntent(skill, context, intentkey) {
     }
 
     var slots = skill.intents[intentkey].schema ? skill.intents[intentkey].schema.slots : null;
-    var result = _parseText(input, utterances, skill.intents[intentkey].schema.slots);
+    var result = _parseText(input, utterances, slots);
 
     if (result.isValid) {
         var session = context[BOT.Session];
@@ -159,7 +159,7 @@ function _matchUtterancesForIntent(skill, context, intentkey) {
 }
 
 function _parseText(text, utterances, slots) {
-    var result = { isValid: true, pairs: [] };
+    var result = { isValid: false, pairs: [] };
 
     for (var h in utterances) {
         var template = utterances[h];
