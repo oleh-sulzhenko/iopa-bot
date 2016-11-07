@@ -28,7 +28,7 @@ function IopaSkill(name) {
     this.name = name;
 
     // global skills are always used in parsing;  non-global only parsed when launched
-    this.global = true;
+    this._global = true;
 
     this.messages = {
         // When an intent was passed in that the skill was not configured to handle
@@ -55,7 +55,7 @@ function IopaSkill(name) {
 
 IopaSkill.prototype.global = function(flag) {
     // global skills are always used in parsing;  non-global only parsed when launched
-    this.global = flag;
+    this._global = flag;
     return this;
 }
 

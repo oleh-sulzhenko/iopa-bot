@@ -61,7 +61,7 @@ module.exports = function parseIntent(context, next) {
 
         var skill = skills[key];
 
-        if (skill.global && (skill.name != 'default') && (skill.name != session[BOT.Skill])) {
+        if (skill._global && (skill.name != 'default') && (skill.name != session[BOT.Skill])) {
             if (parseSkillIntents(skill, context)) {
 
                 if (!session[BOT.Skill]) {  
