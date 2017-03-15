@@ -18,41 +18,41 @@
 var Skill = require('../schema/skill');
 
 const iopa = require('iopa'),
-  constants = iopa.constants,
-  IOPA = constants.IOPA,
-  SERVER = constants.SERVER, 
-  BOT = require('../constants').BOT;
+    constants = iopa.constants,
+    IOPA = constants.IOPA,
+    SERVER = constants.SERVER,
+    BOT = require('../constants').BOT;
 
-function Dialog(app) { 
+function Dialog(app) {
 
-   var dialogs = {};
-   this.dialogs = dialogs;
-   this.app = app;
+    var dialogs = {};
+    this.dialogs = dialogs;
+    this.app = app;
 
-    app.dialog = function() {
-           var args = [].splice.call(arguments,0);
-            dialogName = args[0];
+    app.dialog = function () {
+        var args = [].splice.call(arguments, 0);
+        dialogName = args[0];
 
-           if (!(typeof dialogName === 'string' || dialogName instanceof String))
-                throw new Error("dialog must start with dialog name, then array of intents, then function to call"); 
+        if (!(typeof dialogName === 'string' || dialogName instanceof String))
+            throw new Error("dialog must start with dialog name, then array of intents, then function to call");
 
-            args.splice(0, 1);  // keep remainder
-            
-      
-            dialogs[dialogName] = { 
-                "name": dialogName,
-                "steps": args
-            }
+        args.splice(0, 1);  // keep remainder
+
+
+        dialogs[dialogName] = {
+            "name": dialogName,
+            "steps": args
+        }
     }
 
     app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Dialog] = {
-        beginDialog: function(name, context, next) {
+        beginDialog: function (name, context, next) {
 
             var dialog = dialogs[name];
 
             if (!dialog)
-              throw new Error("Dialog not recognized");
-            
+                throw new Error("Dialog not recognized");
+
             dialogFunc = dialog.steps[0];
 
             if (typeof dialogFunc != "function") {
@@ -72,13 +72,13 @@ function Dialog(app) {
 module.exports = Dialog;
 
 Dialog.prototype.invoke = function (context, next) {
-   
-    if (!context[BOT.Intent])
-      return next();
-      // must have an intent to process dialog
 
-    if (!context[BOT.Session][BOT.CurrentDialog]) 
-         return this._matchBeginDialog(context, next);
+    if (!context[BOT.Intent])
+        return next();
+    // must have an intent to process dialog
+
+    if (!context[BOT.Session][BOT.CurrentDialog])
+        return this._matchBeginDialog(context, next);
 
     return this._continueDialog(context, next);
 
@@ -108,18 +108,23 @@ Dialog.prototype._matchBeginDialog = function (context, next) {
 }
 
 Dialog.prototype._continueDialog = function (context, next) {
-   
+
     var sessionDialog = context[BOT.Session][BOT.CurrentDialog];
 
     var dialog = this.dialogs[sessionDialog.name];
 
-     if (sessionDialog.step >= dialog.steps.length)
-        {
-            // was at end of dialog so just clear
-            context[BOT.Session][BOT.CurrentDialog] = null;
-           return this._matchBeginDialog(context, next);
-        }
-    
+    if (!dialog) {
+        // not a recognized dialog so clear
+        context[BOT.Session][BOT.CurrentDialog] = null;
+        return this._matchBeginDialog(context, next);
+    }
+
+    if (sessionDialog.step >= dialog.steps.length) {
+        // was at end of dialog so just clear
+        context[BOT.Session][BOT.CurrentDialog] = null;
+        return this._matchBeginDialog(context, next);
+    }
+
     var intentFilter;
     var dialogFunc;
 
@@ -129,18 +134,18 @@ Dialog.prototype._continueDialog = function (context, next) {
         dialogFunc = intentFilter;
         intentFilter = null;
     } else {
-        sessionDialog.step ++;
+        sessionDialog.step++;
         dialogFunc = dialog.steps[sessionDialog.step];
     }
 
-    sessionDialog.step ++;
+    sessionDialog.step++;
 
     if (intentFilter && !intentFilter.includes(context[BOT.Intent]) && !intentFilter.includes('*')) {
         context[BOT.Session][BOT.CurrentDialog] = null;
         return this._matchBeginDialog(context, next);
     }
 
-    return dialogFunc(context, function(){ return Promise.resolve(null) });
+    return dialogFunc(context, function () { return Promise.resolve(null) });
 
 }
 

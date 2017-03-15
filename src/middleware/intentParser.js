@@ -38,7 +38,11 @@ module.exports = function parseIntent(context, next) {
     if (session[BOT.Skill]) {
         skill = skills[session[BOT.Skill]];
 
-        if (parseSkillIntents(skill, context)) {
+        if (!skill) {
+            // not a recognized skill so clear
+            context[BOT.Session][BOT.Skill] = null;
+
+        } else if (parseSkillIntents(skill, context)) {
             session[BOT.NewSession] = false;
             session[BOT.Skill] = skill.name;
             return invokeIntent(context, next);
@@ -64,7 +68,7 @@ module.exports = function parseIntent(context, next) {
         if (skill._global && (skill.name != 'default') && (skill.name != session[BOT.Skill])) {
             if (parseSkillIntents(skill, context)) {
 
-                if (!session[BOT.Skill]) {  
+                if (!session[BOT.Skill]) {
                     session[BOT.NewSession] = true;
                 } else {
                     session[BOT.NewSession] = false;
@@ -103,14 +107,17 @@ function parseSkillIntents(skill, context) {
 
 function invokeIntent(context, next) {
     var session = context[BOT.Session];
-  
+
     var skills = context[SERVER.Capabilities][BOT.CAPABILITIES.Skills].skills;
 
-    if (!session[BOT.Skill])
-    {
-       session[BOT.Skill] = 'default'
+    if (!context[BOT.Intent]) {
+        return next();
     }
-      
+
+    if (!session[BOT.Skill]) {
+        session[BOT.Skill] = 'default'
+    }
+
     var intent = skills[session[BOT.Skill]].intents[context[BOT.Intent]];
 
     if (intent && intent["function"])
