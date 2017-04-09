@@ -75,7 +75,7 @@ IopaSkill.prototype.intent = function (intentName, schema, func) {
 };
 
 IopaSkill.prototype.dictionary = function (obj2) {
-    for (var attrname in obj2) { this.dictionary[attrname] = obj2[attrname]; }
+    for (var attrname in obj2) { this._dictionary[attrname] = obj2[attrname]; }
     return this;
 };
 
@@ -123,33 +123,12 @@ IopaSkill.prototype.utterances = function () {
     for (intentName in this.intents) {
         intent = this.intents[intentName];
         if (intent.schema && intent.schema.utterances) {
+            const _this = this
             intent.schema.utterances.forEach(function (sample) {
                 var list = Utterances(sample,
                     intent.schema.slots,
-                    this._dictionary,
-                    this.exhaustiveUtterances);
-                list.forEach(function (utterance) {
-                    out += intent.name + "\t" + (utterance.replace(/\s+/g, " ")).trim() + "\n";
-                });
-            });
-        }
-    }
-    return out;
-};
-
-// Generate a list of custom slots
-IopaSkill.prototype.utterances = function () {
-    var intentName,
-        intent,
-        out = "";
-    for (intentName in this.intents) {
-        intent = this.intents[intentName];
-        if (intent.schema && intent.schema.utterances) {
-            intent.schema.utterances.forEach(function (sample) {
-                var list = Utterances(sample,
-                    intent.schema.slots,
-                    this.dictionary,
-                    this.exhaustiveUtterances);
+                    _this._dictionary,
+                    _this.exhaustiveUtterances);
                 list.forEach(function (utterance) {
                     out += intent.name + "\t" + (utterance.replace(/\s+/g, " ")).trim() + "\n";
                 });
