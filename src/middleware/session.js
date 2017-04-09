@@ -68,8 +68,7 @@ function SessionMiddleware(app) {
        },
        "delete" : function (id) {
            var dbpath = "sessions/" + id;
-           db.put(dbpath, null);
-           return Promise.resolve(null);
+           return db.delete(dbpath);
        }
    }
    app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Session][IOPA.Version] = BOT.Version;
