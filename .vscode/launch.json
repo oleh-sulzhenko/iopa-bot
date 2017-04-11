@@ -2,10 +2,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch demo",
+            "name": "Launch test",
             "type": "node",
             "request": "launch",
-            "program": "${workspaceRoot}/demo/index.js",
+            "program": "${workspaceRoot}/test/index.js",
             "stopOnEntry": false,
             "args": [],
             "cwd": "${workspaceRoot}",

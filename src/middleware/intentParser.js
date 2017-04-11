@@ -152,7 +152,7 @@ function _matchUtterancesForIntent(skill, context, intentkey) {
     }
 
     var slots = skill.intents[intentkey].schema ? skill.intents[intentkey].schema.slots : null;
-    var result = _parseText(input, utterances, slots);
+    var result = _parseText(input, utterances, slots, skill.dictionaries);
 
     if (result.isValid) {
         var session = context[BOT.Session];
@@ -167,7 +167,7 @@ function _matchUtterancesForIntent(skill, context, intentkey) {
     return result.isValid;
 }
 
-function _parseText(text, utterances, slots) {
+function _parseText(text, utterances, slots, dictionary) {
     var result = { isValid: false, pairs: [] };
 
     for (var h in utterances) {
@@ -191,7 +191,7 @@ function _parseText(text, utterances, slots) {
 
                     if (token.toLowerCase() != word.toLowerCase()) {
                         // A word doesn't match, but is it a variable?
-                        var tokenParts = token.match(/{([a-zA-Z0-9\_]+)\|([a-zA-Z0-9]+)}/);
+                        var tokenParts = token.match(/{([a-zA-Z0-9\_\']+)\|([a-zA-Z0-9]+)}/);
                         if (tokenParts && tokenParts.length == 3) {
                             // Found a variable.
                             var name = tokenParts[2];
@@ -203,7 +203,25 @@ function _parseText(text, utterances, slots) {
                                 case 'NUMBER': isValidType = parseFloat(word); break;
                                 case 'DATE': isValidType = Date.parse(word); break;
                                 case 'LITERAL': isValidType = true; break;
-                            };
+                                default:
+                                    isValidType = false;
+                                    // This is a slot variable, check if the value exists in the dictionary.
+                                    var utteranceValue = tokenParts[1];
+                                    if (utteranceValue.toLowerCase() == word.toLowerCase()) {
+                                        isValidType = true;
+                                    } else if (dictionary && dictionary[type]) {
+                                        var array = dictionary[type];
+                                        var arraylength = array.length;
+
+                                        for (var j = 0; j < arraylength; j++) {
+                                            var dictionaryValue = dictionary[type][j];
+                                            if (word.toLowerCase() == dictionaryValue.toLowerCase()) {
+                                                isValidType = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                            }
 
                             if (isValidType) {
                                 // It's a valid variable and type.

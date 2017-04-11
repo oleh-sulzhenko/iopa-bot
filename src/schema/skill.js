@@ -18,10 +18,10 @@
 var Utterances = require("alexa-utterances");
 
 const iopa = require('iopa'),
-  constants = iopa.constants,
-  IOPA = constants.IOPA,
-  SERVER = constants.SERVER, 
-  BOT = require('../constants').BOT;
+    constants = iopa.constants,
+    IOPA = constants.IOPA,
+    SERVER = constants.SERVER,
+    BOT = require('../constants').BOT;
 
 function IopaSkill(name) {
 
@@ -46,14 +46,16 @@ function IopaSkill(name) {
 
     // A mapping of keywords to arrays of possible values, for expansion of sample utterances
     this._dictionary = {};
-    
+
+    this.dictionaries = this._dictionary;
+
     this.intents = {};
-       
+
     // Unlike alexa-app, no Launch hook, just register Intent handler of "urn:io.iopa.bot:launch"
     // Unlike alexa-app, no SessionEnded hook, just register Intent handler of "urn:io.iopa.bot:sessionended"
 }
 
-IopaSkill.prototype.global = function(flag) {
+IopaSkill.prototype.global = function (flag) {
     // global skills are always used in parsing;  non-global only parsed when launched
     this._global = flag;
     return this;
@@ -75,9 +77,11 @@ IopaSkill.prototype.intent = function (intentName, schema, func) {
 };
 
 IopaSkill.prototype.dictionary = function (obj2) {
+
     for (var attrname in obj2) { this._dictionary[attrname] = obj2[attrname]; }
     return this;
 };
+
 
 IopaSkill.prototype.launch = function (func) {
     this.intent(BOT.INTENTS.Launch, func);
@@ -85,8 +89,8 @@ IopaSkill.prototype.launch = function (func) {
 };
 
 IopaSkill.prototype.sessionEnded = function (func) {
-   this.intent(BOT.INTENTS.SessionEnded, func);
-   return this;
+    this.intent(BOT.INTENTS.SessionEnded, func);
+    return this;
 };
 
 // Helper Function to extract the schema and generate a schema JSON object
