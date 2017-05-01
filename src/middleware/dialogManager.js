@@ -145,7 +145,7 @@ Dialog.prototype._continueDialog = function (context, next) {
         return this._matchBeginDialog(context, next);
     }
 
-    return dialogFunc(context, function () { return Promise.resolve(null) });
+    return dialogFunc(context, next);
 
 }
 

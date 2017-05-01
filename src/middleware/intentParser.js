@@ -24,7 +24,7 @@ const iopa = require('iopa'),
 module.exports = function parseIntent(context, next) {
 
     // Ensure this context record is actually a valid (bot) message 
-    if (!context[BOT.Session])
+    if (!context[BOT.Session] || !context[BOT.Text])
         return next();
 
     var session = context[BOT.Session];
