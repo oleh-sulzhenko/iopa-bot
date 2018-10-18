@@ -137,19 +137,19 @@ Dialog.prototype._continueDialog = function (context, next) {
     var intentFilter = dialog.steps[sessionDialog.step];
 
     if (typeof intentFilter == "function") {
+        // Dialog step has no intent filter, invoke dialogFunc
         dialogFunc = intentFilter;
         intentFilter = null;
+    } else if (intentFilter && !intentFilter.includes(context[BOT.Intent]) && !intentFilter.includes('*')) {
+        // No matching intent for current dialog step, see if we should start another dialog
+        return this._matchBeginDialog(context, next);
     } else {
+        // Match with current dialog step intent filter, advance and invoke dialogFunc
         sessionDialog.step++;
         dialogFunc = dialog.steps[sessionDialog.step];
     }
 
     sessionDialog.step++;
-
-    if (intentFilter && !intentFilter.includes(context[BOT.Intent]) && !intentFilter.includes('*')) {
-        context[BOT.Session][BOT.CurrentDialog] = null;
-        return this._matchBeginDialog(context, next);
-    }
 
     return dialogFunc(context, next);
 
