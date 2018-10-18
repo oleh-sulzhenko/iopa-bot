@@ -122,6 +122,7 @@ Dialog.prototype._continueDialog = function (context, next) {
     if (sessionDialog.step >= dialog.steps.length) {
         // was at end of dialog so just clear
         context[BOT.Session][BOT.CurrentDialog] = null;
+        context[BOT.Session][BOT.LastDialogEndedDate] = new Date().getTime();
         return this._matchBeginDialog(context, next);
     }
 
