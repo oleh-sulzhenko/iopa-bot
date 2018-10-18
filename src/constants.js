@@ -1,6 +1,6 @@
 /*
  * Iopa Bot Framework
- * Copyright (c) 2016 Internet of Protocols Alliance 
+ * Copyright (c) 2016 Internet of Protocols Alliance
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,13 +34,14 @@ exports.BOT = {
     Send: "bot:Send",
     Fail: "bot:Fail",
     Timestamp: "bot:Timestamp",
-    
+
     // Session Variables:
     Skill: "bot:Skill",
     Slots: "bot:Slots",
     Variables: "bot:Variables",
     NewSession: "bot:NewSession",
     CurrentDialog: "bot:CurrentDialog",
+    LastDialogEndedDate: "bot:LastDialogEndedDate",
 
     CAPABILITIES: {
         Slack: "urn:io.iopa.bot:slack",
@@ -49,7 +50,7 @@ exports.BOT = {
         Dialog: "urn:io.iopa.bot:dialog",
         Session: "urn:io.iopa.bot:session"
     },
-    
+
     VERSION: "1.4",
 
     INTENTS: {
