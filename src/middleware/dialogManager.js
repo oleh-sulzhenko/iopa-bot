@@ -1,6 +1,6 @@
 /*
  * Iopa Bot Framework
- * Copyright (c) 2016 Internet of Protocols Alliance 
+ * Copyright (c) 2016 Internet of Protocols Alliance
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,9 +57,9 @@ function Dialog(app) {
 
             if (typeof dialogFunc != "function") {
                 dialogFunc = dialog.steps[1];
-                context[BOT.Session][BOT.CurrentDialog] = { name: dialog.name, step: 2 }
+                context[BOT.Session][BOT.CurrentDialog] = { name: dialog.name, step: 2, totalSteps: dialog.steps.length }
             } else {
-                context[BOT.Session][BOT.CurrentDialog] = { name: dialog.name, step: 1 }
+                context[BOT.Session][BOT.CurrentDialog] = { name: dialog.name, step: 1, totalSteps: dialog.steps.length }
             }
 
             return dialogFunc(context, next);
@@ -94,7 +94,7 @@ Dialog.prototype._matchBeginDialog = function (context, next) {
         if (typeof dialog.steps[0] != "function") {
             if (dialog.steps[0].includes(context[BOT.Intent]) || dialog.steps[0].includes('*')) {
                 dialogFunc = dialog.steps[1];
-                context[BOT.Session][BOT.CurrentDialog] = { name: dialog.name, step: 2 };
+                context[BOT.Session][BOT.CurrentDialog] = { name: dialog.name, step: 2, totalSteps: dialog.steps.length };
                 break;
             }
         }
