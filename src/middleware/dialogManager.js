@@ -73,6 +73,11 @@ module.exports = Dialog;
 
 Dialog.prototype.invoke = function (context, next) {
 
+    if (context["urn:bot:dialog:invoke"]) {
+      const dialogId = context["urn:bot:dialog:invoke"]
+      return context[SERVER.Capabilities][BOT.CAPABILITIES.Dialog].beginDialog(dialogId, context, next)
+    }
+
     if (!context[BOT.Intent])
         return next();
     // must have an intent to process dialog
