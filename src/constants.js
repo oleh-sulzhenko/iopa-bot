@@ -51,7 +51,7 @@ exports.BOT = {
         Session: "urn:io.iopa.bot:session"
     },
 
-    VERSION: "1.4",
+    VERSION: "1.5.0",
 
     INTENTS: {
         Launch: "urn:io.iopa.bot:launch",
