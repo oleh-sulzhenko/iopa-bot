@@ -1,6 +1,6 @@
 /*
  * Iopa Bot Framework
- * Copyright (c) 2016 Internet of Protocols Alliance 
+ * Copyright (c) 2016 Internet of Protocols Alliance
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,9 +57,9 @@ function Dialog(app) {
 
             if (typeof dialogFunc != "function") {
                 dialogFunc = dialog.steps[1];
-                context[BOT.Session][BOT.CurrentDialog] = { name: dialog.name, step: 2 }
+                context[BOT.Session][BOT.CurrentDialog] = { name: dialog.name, step: 2, totalSteps: dialog.steps.length }
             } else {
-                context[BOT.Session][BOT.CurrentDialog] = { name: dialog.name, step: 1 }
+                context[BOT.Session][BOT.CurrentDialog] = { name: dialog.name, step: 1, totalSteps: dialog.steps.length }
             }
 
             return dialogFunc(context, next);
@@ -72,6 +72,11 @@ function Dialog(app) {
 module.exports = Dialog;
 
 Dialog.prototype.invoke = function (context, next) {
+
+    if (context["urn:bot:dialog:invoke"]) {
+      const dialogId = context["urn:bot:dialog:invoke"]
+      return context[SERVER.Capabilities][BOT.CAPABILITIES.Dialog].beginDialog(dialogId, context, next)
+    }
 
     if (!context[BOT.Intent])
         return next();
@@ -94,7 +99,7 @@ Dialog.prototype._matchBeginDialog = function (context, next) {
         if (typeof dialog.steps[0] != "function") {
             if (dialog.steps[0].includes(context[BOT.Intent]) || dialog.steps[0].includes('*')) {
                 dialogFunc = dialog.steps[1];
-                context[BOT.Session][BOT.CurrentDialog] = { name: dialog.name, step: 2 };
+                context[BOT.Session][BOT.CurrentDialog] = { name: dialog.name, step: 2, totalSteps: dialog.steps.length };
                 break;
             }
         }
@@ -122,6 +127,7 @@ Dialog.prototype._continueDialog = function (context, next) {
     if (sessionDialog.step >= dialog.steps.length) {
         // was at end of dialog so just clear
         context[BOT.Session][BOT.CurrentDialog] = null;
+        context[BOT.Session][BOT.LastDialogEndedDate] = new Date().getTime();
         return this._matchBeginDialog(context, next);
     }
 
@@ -131,19 +137,19 @@ Dialog.prototype._continueDialog = function (context, next) {
     var intentFilter = dialog.steps[sessionDialog.step];
 
     if (typeof intentFilter == "function") {
+        // Dialog step has no intent filter, invoke dialogFunc
         dialogFunc = intentFilter;
         intentFilter = null;
+    } else if (intentFilter && !intentFilter.includes(context[BOT.Intent]) && !intentFilter.includes('*')) {
+        // No matching intent for current dialog step, see if we should start another dialog
+        return this._matchBeginDialog(context, next);
     } else {
+        // Match with current dialog step intent filter, advance and invoke dialogFunc
         sessionDialog.step++;
         dialogFunc = dialog.steps[sessionDialog.step];
     }
 
     sessionDialog.step++;
-
-    if (intentFilter && !intentFilter.includes(context[BOT.Intent]) && !intentFilter.includes('*')) {
-        context[BOT.Session][BOT.CurrentDialog] = null;
-        return this._matchBeginDialog(context, next);
-    }
 
     return dialogFunc(context, next);
 

@@ -55,7 +55,6 @@ module.exports = function parseIntent(context, next) {
 
         if (parseSkillIntents(skill, context)) {
             session[BOT.NewSession] = false;
-            session[BOT.Skill] = skill.name;
             return invokeIntent(context, next);
         }
     }
@@ -119,6 +118,11 @@ function invokeIntent(context, next) {
     }
 
     var intent = skills[session[BOT.Skill]].intents[context[BOT.Intent]];
+
+    if (intent && intent["function"])
+        return intent["function"](context, next);
+
+    intent = skills['default'].intents[context[BOT.Intent]];
 
     if (intent && intent["function"])
         return intent["function"](context, next);
