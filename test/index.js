@@ -1,6 +1,6 @@
 /*
  * Iopa Bot Framework
- * Copyright (c) 2016 Internet of Protocols Alliance 
+ * Copyright (c) 2016-9 Internet of Protocols Alliance
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,99 +16,100 @@
  */
 
 const iopaBotFramework = require('iopa-bot'),
-    iopa = require('iopa'),
-    BOT = iopaBotFramework.constants.BOT;
+  iopa = require('iopa'),
+  BOT = iopaBotFramework.constants.BOT
 
-require('iopa-bot-console');
+require('iopa-bot-console')
 
-var app = new iopa.App();
+var app = new iopa.App()
 
 // use connector and Bot Framework
 
-app.use(iopaBotFramework.connectors.console);
+app.use(iopaBotFramework.connectors.console)
 
 // add any first pass intent processors here e.g. Microsoft Luis, IBMWatson etc.
 
-app.use(iopaBotFramework);
+app.use(iopaBotFramework)
 
 // ....
 
-// define schema intents 
+// define schema intents
 
-app.intent(BOT.INTENTS.Launch, { "utterances": ['/launch', '/open'] })
+app.intent(BOT.INTENTS.Launch, { utterances: ['/launch', '/open'] })
 
 // define dialogs
 
-app.dialog('/', [BOT.INTENTS.Launch], function (context, next) {
-    context.response.say("Hello!  Please converse with this bot. ").send();
-});
-
-app.intent('helloIntent', { "utterances": ['hi', 'hello', 'hey'] }, function (context, next) {
-    context.response.say("Hello World").send();
+app.dialog('/', [BOT.INTENTS.Launch], function(context, next) {
+  context.response.say('Hello!  Please converse with this bot. ').send()
 })
 
-var skill = app.skill('FeelingSkill');
+app.intent('helloIntent', { utterances: ['hi', 'hello', 'hey'] }, function(
+  context,
+  next
+) {
+  context.response.say('Hello World').send()
+})
+
+var skill = app.skill('FeelingSkill')
 
 skill.dictionary({
-    'I_AM_FEELING_PHRASE': [
-        "I'm",
-        "I'm feeling",
-        "I am",
-        "I am feeling",
-        "I feel",
-    ]
+  I_AM_FEELING_PHRASE: ["I'm", "I'm feeling", 'I am', 'I am feeling', 'I feel']
 })
 
 skill.dictionary({
-    'FEELING_MODIFIER': [
-        'so',
-        'pretty',
-        'really',
-        'very',
-        'super',
-        'extremely',
-        'slightly',
-        'moderately',
-        'quite'
-    ]
+  FEELING_MODIFIER: [
+    'so',
+    'pretty',
+    'really',
+    'very',
+    'super',
+    'extremely',
+    'slightly',
+    'moderately',
+    'quite'
+  ]
 })
 
 skill.dictionary({
-    'ANXIETY_KEY_WORDS': [
-        'stressed',
-        'anxious',
-        'stressed out',
-        'nervous',
-        'worried'
-    ]
+  ANXIETY_KEY_WORDS: [
+    'stressed',
+    'anxious',
+    'stressed out',
+    'nervous',
+    'worried'
+  ]
 })
 
-skill.intent('IAmStressedOut', {
-    "slots": {
-        "Feeling": 'ANXIETY_KEY_WORDS',
-        "Modifier": 'FEELING_MODIFIER',
-        "IAmPhrase": 'I_AM_FEELING_PHRASE'
+skill.intent(
+  'IAmStressedOut',
+  {
+    slots: {
+      Feeling: 'ANXIETY_KEY_WORDS',
+      Modifier: 'FEELING_MODIFIER',
+      IAmPhrase: 'I_AM_FEELING_PHRASE'
     },
     utterances: [
-        "{I_AM_FEELING_PHRASE|IAmPhrase} {ANXIETY_KEY_WORDS|Feeling}",
-        "{I_AM_FEELING_PHRASE|IAmPhrase} {FEELING_MODIFIER|Modifier} {ANXIETY_KEY_WORDS|Feeling}"
+      '{I_AM_FEELING_PHRASE|IAmPhrase} {ANXIETY_KEY_WORDS|Feeling}',
+      '{I_AM_FEELING_PHRASE|IAmPhrase} {FEELING_MODIFIER|Modifier} {ANXIETY_KEY_WORDS|Feeling}'
     ]
-}, function (context, next) {
-    context.response.say(JSON.stringify(context[BOT.Slots])).send();
-})
+  },
+  function(context, next) {
+    context.response.say(JSON.stringify(context[BOT.Slots])).send()
+  }
+)
 
-skill.global(true);
+skill.global(true)
 
-console.log(skill.schema());
-console.log(skill.utterances());
+console.log(skill.schema())
+console.log(skill.utterances())
 
 // build and listen
 
-app.dialog('/unknown', '*', function (context, next) {
-    context.response.say("I don't know what you mean by " + context[BOT.Text]).send();
-});
+app.dialog('/unknown', '*', function(context, next) {
+  context.response
+    .say("I don't know what you mean by " + context[BOT.Text])
+    .send()
+})
 
-
-app.build();
-app.listen();
-
+app.build()
+app.listen()

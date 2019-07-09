@@ -1,6 +1,8 @@
 {
   "name": "iopa-bot",
-  "main": "index.js",
+  "version": "2.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "description": "API-First Bot Framework for Internet of Things (IoT), based on Internet of Protocols Alliance (IOPA) specification",
   "author": "iopa <build@iopa.io>",
   "license": "Apache-2.0",
@@ -10,18 +12,17 @@
       "email": "build@iopa.io"
     }
   ],
-  "version": "1.5.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/iopa-io/iopa-bot.git"
   },
   "dependencies": {
-    "iopa": "^1.4.0",
-    "alexa-utterances": "^0.2.1"
+    "iopa": "^2.0.0",
+    "alexa-utterances": "^0.2.1",
+    "url-polyfill": "^1.1.5"
   },
   "keywords": [
     "iopa",
-    "limerun",
     "serverless",
     "lambda",
     "azure function",
@@ -34,20 +35,11 @@
     "node": ">= 4.0"
   },
   "scripts": {
-    "test": "mocha --reporter spec test",
-    "prepublish": "rm -rf node_modules/iopa-bot && require-self",
-    "quick": "git add . -A && git commit -m 'dev test' && npm version patch && npm publish",
-    "typings": "tsd reinstall --overwrite --clean --config tools/tsd.json && tsd link"
+    "build": "rm -rf ./dist && tsc",
+    "lint": "berun-scripts lint"
   },
   "devDependencies": {
-    "iopa-bot-console": "^1.4.1",
-    "require-self": "^0.x"
+    "iopa-bot-console": "^2.0.0"
   },
-  "devDependencies_unused": {
-    "mocha": "^2.3.2",
-    "mocha-junit-reporter": "^1.6.1",
-    "should": "^7.1.0"
-  },
-  "readmeFilename": "README.md",
   "homepage": "http://iopa.io"
 }
