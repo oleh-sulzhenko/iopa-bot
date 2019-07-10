@@ -17,8 +17,10 @@
     "url": "https://github.com/iopa-io/iopa-bot.git"
   },
   "dependencies": {
-    "iopa": "^2.0.0",
     "alexa-utterances": "^0.2.1",
+    "iopa": "^2.0.0",
+    "reactive-cards": "^0.5.3",
+    "reactive-dialogs": "^0.5.4",
     "url-polyfill": "^1.1.5"
   },
   "keywords": [

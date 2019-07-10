@@ -67,7 +67,7 @@ class SkillsManager {
   private defaultSkill: Skill
 
   constructor(app) {
-    console.log('REGISTERED SKILLS MANAGER on ', app.properties[SERVER.AppId])
+    console.log('REGISTERED SKILLS MANAGER on ' + app.properties[SERVER.AppId])
     app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Skills] = {
       verbose: false,
       timeout: 300000, // session timeout in milliseconds, 0 to disable
