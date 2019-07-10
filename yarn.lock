@@ -42,10 +42,10 @@ reactive-cards@^0.5.3:
   resolved "https://registry.yarnpkg.com/reactive-cards/-/reactive-cards-0.5.3.tgz#b375fb06e525a3639786b3c3330bae09bf097e79"
   integrity sha512-FVhNYQUDc6Kh9PpFBzswbozxrVnwQ/sS8Wc6fp1bkpAePm2n0iXnDkcMM0XJPKfesjqDJQi7fqKSO3mKMioO0g==
 
-reactive-dialogs@^0.5.4:
-  version "0.5.4"
-  resolved "https://registry.yarnpkg.com/reactive-dialogs/-/reactive-dialogs-0.5.4.tgz#fcd63269f71ad340ae7adcd51a5df9c6fa28d503"
-  integrity sha512-C7d08uXmzJ4uALDfc6140Lv3Tv2aYqvmcQalOrNHVJNiOFek9CSaFHzDnknLeAwQK4EdPBiYqRFMeWUOEcy2Dw==
+reactive-dialogs@^0.5.5:
+  version "0.5.5"
+  resolved "https://registry.yarnpkg.com/reactive-dialogs/-/reactive-dialogs-0.5.5.tgz#b0fc164767c869b147e5ff39efe2f910a4602a20"
+  integrity sha512-9RlQs4E/n4XrQs2CjhX95w0rdwCYl7Gfp7XXWHEBRT+JuxL4t3zrve/AZu63wU3iBD4fdQrZnuBKpaYzwWaygg==
 
 url-polyfill@^1.1.5:
   version "1.1.6"
