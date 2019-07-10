@@ -70,6 +70,9 @@ class DialogManager {
         if (!context[constants_1.BOT.Intent])
             return next();
         // must have an intent to process dialog
+        console.log('>> skill', context[constants_1.BOT.Session][constants_1.BOT.Skill]);
+        console.log('>> intent', context[constants_1.BOT.Intent]);
+        console.log('>> dialog', context[constants_1.BOT.Session][constants_1.BOT.CurrentDialog]);
         if (!context[constants_1.BOT.Session][constants_1.BOT.CurrentDialog])
             return this._matchBeginDialog(context, next);
         return this._continueDialog(context, next);

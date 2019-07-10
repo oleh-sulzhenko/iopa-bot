@@ -2,7 +2,7 @@ import './polyfill/array';
 import 'url-polyfill';
 import * as Iopa from 'iopa';
 import { ReactiveDialogsCapability } from './middleware/reactive-dialogs-manager';
-import Skill from './schema/skill';
+import { default as Skill } from './schema/skill';
 export interface SkillsCapability {
     /** debugging is verbose for this skill */
     verbose: boolean;

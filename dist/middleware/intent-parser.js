@@ -50,6 +50,7 @@ function parseIntent(context, next) {
         skill = skills['default'];
         if (parseSkillIntents(skill, context)) {
             session[constants_1.BOT.NewSession] = false;
+            session[constants_1.BOT.Skill] = 'default';
             return invokeIntent(context, next);
         }
     }

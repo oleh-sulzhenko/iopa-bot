@@ -130,6 +130,9 @@ class ReactiveDialogManager {
             return next();
         }
         const botSession = exports.useBotSession(context)[0];
+        var isV2Dialog = !!botSession[constants_1.BOT.SkillVersion];
+        if (!isV2Dialog)
+            return next();
         console.log('>> skill', botSession[constants_1.BOT.Skill]);
         console.log('>> intent', context[constants_1.BOT.Intent]);
         console.log('>> dialog', botSession[constants_1.BOT.CurrentDialog]);

@@ -4,6 +4,7 @@ import {
   DialogApp,
   SkillsCapability
 } from './iopa-bot-framework'
+
 import {
   ReactiveDialogsCapability,
   ReactiveDialogsSession,

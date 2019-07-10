@@ -284,9 +284,14 @@ export default class ReactiveDialogManager {
     }
 
     const botSession = useBotSession(context)[0]
+
+    var isV2Dialog = !!botSession[BOT.SkillVersion]
+    if (!isV2Dialog) return next()
+
     console.log('>> skill', botSession[BOT.Skill])
     console.log('>> intent', context[BOT.Intent])
     console.log('>> dialog', botSession[BOT.CurrentDialog])
+
     //
     // Check if we are checking for a new session or continuing an existing session
     //
@@ -295,6 +300,7 @@ export default class ReactiveDialogManager {
     } else {
       return this._continueFlow(context, next) as Promise<void>
     }
+    
   }
 
   /** Check if we can process the intent and therefore start this dialog */
@@ -311,10 +317,13 @@ export default class ReactiveDialogManager {
       return next()
     }
 
+  
+
     return reactive.renderFlow(flowId, null, context, next)
   }
 
   private _continueFlow(context: Iopa.Context, next: () => Promise<void>) {
+
     const [botSession, setBotSession] = useBotSession(context)
     const intent: string = context[BOT.Intent]
 

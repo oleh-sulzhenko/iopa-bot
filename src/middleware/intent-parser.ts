@@ -66,8 +66,10 @@ export default function parseIntent(
 
     if (parseSkillIntents(skill, context)) {
       session[BOT.NewSession] = false
+      session[BOT.Skill] = 'default'
       return invokeIntent(context, next)
     }
+
   }
 
   //
@@ -120,6 +122,7 @@ function invokeIntent(
   context: Iopa.Context,
   next: () => Promise<void>
 ): Promise<void> {
+
   const session: Session = context[BOT.Session]
 
   const skills = (context[SERVER.Capabilities][
@@ -135,6 +138,7 @@ function invokeIntent(
   }
 
   let intent = skills[session[BOT.Skill]].intents[context[BOT.Intent]]
+
 
   if (intent && intent['function']) {
     return intent['function'](context, next)

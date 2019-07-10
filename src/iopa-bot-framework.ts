@@ -21,13 +21,13 @@ import * as Iopa from 'iopa'
 const { IOPA, SERVER } = Iopa.constants
 import { BOT } from './constants'
 
-import sessionMiddleware from './middleware/session'
-import DialogManagerMiddleware from './middleware/dialog-manager'
-import ReactiveDialogsMiddleware, {
+import { default as sessionMiddleware } from './middleware/session'
+import { default as DialogManagerMiddleware } from './middleware/dialog-manager'
+import { default as ReactiveDialogsMiddleware, 
   ReactiveDialogsCapability
 } from './middleware/reactive-dialogs-manager'
-import IntentParserMiddleware from './middleware/intent-parser'
-import Skill from './schema/skill'
+import { default as IntentParserMiddleware } from './middleware/intent-parser'
+import { default as Skill } from './schema/skill'
 
 export interface SkillsCapability {
   /** debugging is verbose for this skill */
@@ -98,11 +98,12 @@ class SkillsManager {
         name
       )
     }
-
-    app.use(sessionMiddleware)
-    app.use(IntentParserMiddleware)
-    app.use(ReactiveDialogsMiddleware)
-    app.use(DialogManagerMiddleware)
+    
+    app.use(sessionMiddleware, "iopa-bot-sessionMiddleware")
+    app.use(IntentParserMiddleware, "iopa-bot-IntentParserMiddleware")
+    app.use(ReactiveDialogsMiddleware, "iopa-bot-ReactiveDialogsMiddleware")
+    app.use(DialogManagerMiddleware, "iopa-bot-DialogManagerMiddleware")
+    console.log("registered iopa-bot middleware")
   }
 }
 

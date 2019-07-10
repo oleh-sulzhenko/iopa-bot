@@ -104,6 +104,10 @@ export default class DialogManager {
     if (!context[BOT.Intent]) return next()
     // must have an intent to process dialog
 
+    console.log('>> skill', context[BOT.Session][BOT.Skill])
+    console.log('>> intent', context[BOT.Intent])
+    console.log('>> dialog', context[BOT.Session][BOT.CurrentDialog])
+
     if (!context[BOT.Session][BOT.CurrentDialog])
       return this._matchBeginDialog(context, next)
 
@@ -111,6 +115,7 @@ export default class DialogManager {
   }
 
   private _matchBeginDialog(context, next) {
+
     let dialogFunc: Iopa.FC | null = null
 
     for (var key in this.dialogs) {

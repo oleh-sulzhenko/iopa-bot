@@ -51,10 +51,11 @@ class SkillsManager {
             name = name || 'default';
             return app.properties[SERVER.Capabilities][constants_1.BOT.CAPABILITIES.Skills].add(name);
         };
-        app.use(session_1.default);
-        app.use(intent_parser_1.default);
-        app.use(reactive_dialogs_manager_1.default);
-        app.use(dialog_manager_1.default);
+        app.use(session_1.default, "iopa-bot-sessionMiddleware");
+        app.use(intent_parser_1.default, "iopa-bot-IntentParserMiddleware");
+        app.use(reactive_dialogs_manager_1.default, "iopa-bot-ReactiveDialogsMiddleware");
+        app.use(dialog_manager_1.default, "iopa-bot-DialogManagerMiddleware");
+        console.log("registered iopa-bot middleware");
     }
 }
 const IopaBotFramework = function (app) {

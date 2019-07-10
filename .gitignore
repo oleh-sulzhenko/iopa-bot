@@ -22,3 +22,4 @@ node_modules
 # type definitions we mirror from github
 **/typings/**/*.d.ts
 **/typings/tsd.cached.json
+node_modules/

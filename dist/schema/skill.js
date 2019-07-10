@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-const alexa_utterances_1 = require("alexa-utterances");
+const Utterances = require("alexa-utterances");
 const BOT = require('../constants').BOT;
 class Skill {
     isGlobal() {
@@ -118,7 +118,7 @@ class Skill {
             if (intent.schema && intent.schema.utterances) {
                 const _this = this;
                 intent.schema.utterances.forEach(function (sample) {
-                    var list = alexa_utterances_1.default(sample, intent.schema.slots, _this.dictionaries, _this.exhaustiveUtterances);
+                    var list = Utterances(sample, intent.schema.slots, _this.dictionaries, _this.exhaustiveUtterances);
                     list.forEach(function (utterance) {
                         out +=
                             intent.name + '\t' + utterance.replace(/\s+/g, ' ').trim() + '\n';

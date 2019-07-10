@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import Utterances from 'alexa-utterances'
+import * as Utterances from 'alexa-utterances'
 
 import * as Iopa from 'iopa'
 
