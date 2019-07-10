@@ -28,7 +28,7 @@ const intent_parser_1 = require("./middleware/intent-parser");
 const skill_1 = require("./schema/skill");
 class SkillsManager {
     constructor(app) {
-        console.log('REGISTERED SKILLS MANAGER on ', app.properties[SERVER.AppId]);
+        console.log('REGISTERED SKILLS MANAGER on ' + app.properties[SERVER.AppId]);
         app.properties[SERVER.Capabilities][constants_1.BOT.CAPABILITIES.Skills] = {
             verbose: false,
             timeout: 300000,
