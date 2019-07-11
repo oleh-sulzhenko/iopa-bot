@@ -89,7 +89,7 @@ module.exports = function SkillsContainer(app) {
     },
     function(context, next) {
       context.response.say('Hi there.')
-      return context.response.send()
+      return context.response.send().then(next)
     }
   )
 }
@@ -133,7 +133,7 @@ module.exports = function SkillsContainer(app) {
           }
         ]
       }
-      return context.response.card(card).send()
+      return context.response.card(card).send().then(next)
     },
     ['YesIntent', 'NoIntent'],
     function(context, next) {
@@ -149,7 +149,7 @@ module.exports = function SkillsContainer(app) {
       context.response
         .status(200)
         .say('value = ' + value)
-        .send()
+        .send().then(next)
       return context[SERVER.Capabilities][BOT.CAPABILITIES.Dialog].beginDialog(
         'WrapupDialog',
         context,
