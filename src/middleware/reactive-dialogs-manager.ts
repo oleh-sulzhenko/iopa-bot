@@ -16,7 +16,7 @@ const { IOPA, SERVER } = Iopa.constants
 import { BOT } from '../constants'
 import Skill from '../schema/skill'
 import { asyncForEachIfTrue } from '../util/forEachAsync'
-import parse_url from '../polyfill/parse_url'
+import { parse_url } from '../polyfill/parse_url'
 
 export interface DialogCapability {
   beginDialog(

@@ -606,7 +606,7 @@ function renderActionOpenUrl(element, context) {
         if (element.props.url.indexOf(':') == -1) {
             element.props.url = `dialog:/` + element.props.url;
         }
-        const url = parse_url_1.default(element.props.url);
+        const url = parse_url_1.parse_url(element.props.url);
         switch (url.protocol) {
             case 'dialog:':
                 const flowId = url.pathname.replace(/^\/*/, '');
