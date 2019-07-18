@@ -16,7 +16,7 @@
  */
 
 import './polyfill/array'
-import 'url-polyfill'
+import 'whatwg-url'
 import * as Iopa from 'iopa'
 const { IOPA, SERVER } = Iopa.constants
 import { BOT } from './constants'

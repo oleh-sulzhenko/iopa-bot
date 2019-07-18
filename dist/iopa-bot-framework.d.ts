@@ -1,5 +1,5 @@
 import './polyfill/array';
-import 'url-polyfill';
+import 'whatwg-url';
 import * as Iopa from 'iopa';
 import { ReactiveDialogsCapability } from './middleware/reactive-dialogs-manager';
 import { default as Skill } from './schema/skill';

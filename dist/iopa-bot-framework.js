@@ -17,7 +17,7 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 require("./polyfill/array");
-require("url-polyfill");
+require("whatwg-url");
 const Iopa = require("iopa");
 const { IOPA, SERVER } = Iopa.constants;
 const constants_1 = require("./constants");
