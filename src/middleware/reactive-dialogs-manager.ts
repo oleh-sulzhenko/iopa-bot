@@ -16,6 +16,7 @@ const { IOPA, SERVER } = Iopa.constants
 import { BOT } from '../constants'
 import Skill from '../schema/skill'
 import { asyncForEachIfTrue } from '../util/forEachAsync'
+import parse_url from '../polyfill/parse_url'
 
 export interface DialogCapability {
   beginDialog(
@@ -1048,7 +1049,11 @@ async function renderActionOpenUrl(
     return renderActionDialogFlow('', '', element, context)
   }
 
-  const url = new URL(element.props.url, `dialog:/`)
+  if (element.props.url.indexOf(':') == -1) {
+    element.props.url = `dialog:/` + element.props.url
+  }
+
+  const url = parse_url(element.props.url)
 
   switch (url.protocol) {
     case 'dialog:':
