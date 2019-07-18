@@ -14,6 +14,7 @@ const Iopa = require("iopa");
 const { IOPA, SERVER } = Iopa.constants;
 const constants_1 = require("../constants");
 const forEachAsync_1 = require("../util/forEachAsync");
+const parse_url_1 = require("../polyfill/parse_url");
 // TO DO, get from host context
 const defaultPauseInterval = 200;
 const logDebug = true;
@@ -602,7 +603,10 @@ function renderActionOpenUrl(element, context) {
             // continue with dialog next step
             return renderActionDialogFlow('', '', element, context);
         }
-        const url = new URL(element.props.url, `dialog:/`);
+        if (element.props.url.indexOf(':') == -1) {
+            element.props.url = `dialog:/` + element.props.url;
+        }
+        const url = parse_url_1.default(element.props.url);
         switch (url.protocol) {
             case 'dialog:':
                 const flowId = url.pathname.replace(/^\/*/, '');
