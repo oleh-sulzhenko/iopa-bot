@@ -19,7 +19,7 @@
   "dependencies": {
     "alexa-utterances": "^0.2.1",
     "iopa": "^2.0.0",
-    "reactive-cards": "^0.5.3",
+    "reactive-cards": "^0.5.6",
     "reactive-dialogs": "^0.5.5",
     "url-polyfill": "^1.1.5"
   },
@@ -41,7 +41,6 @@
     "lint": "berun-scripts lint"
   },
   "devDependencies": {
-    "iopa-bot-console": "^2.0.0"
   },
   "homepage": "http://iopa.io"
 }
