@@ -1075,9 +1075,7 @@ async function renderActionOpenUrl(
       //
       return renderActionCommand(
         url.pathname.replace(/^\/*/, ''),
-        {
-          ...fromEntries(url.searchParams['entries']())
-        },
+        getJsonFromUrl(url.query),
         element,
         context
       )
@@ -1148,17 +1146,20 @@ function throwErr(...args): Promise<void> {
   throw new Error(message)
 }
 
-function fromEntries(iterable: IterableIterator<[string, string]>) {
-  return [...iterable].reduce(
-    (obj, { 0: key, 1: val }) => Object.assign(obj, { [key]: val }),
-    {}
-  )
-}
-
 function camelize(str) {
   return str
     .replace(/(?:^\w|[A-Z]|\b\w)/g, function(word, index) {
       return index == 0 ? word.toLowerCase() : word.toUpperCase()
     })
     .replace(/\s+/g, '')
+}
+
+export function getJsonFromUrl(url) {
+  var query = url.substr(1);
+  var result = {};
+  query.split("&").forEach(function(part) {
+    var item = part.split("=");
+    result[item[0]] = decodeURIComponent(item[1]);
+  });
+  return result;
 }

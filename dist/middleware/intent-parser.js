@@ -152,7 +152,7 @@ function _parseText(text, utterances, slots, dictionary) {
     };
     for (var h in utterances) {
         var template = utterances[h];
-        var regEx = /[ \n\r\t,\!`\(\)\[\]:;\"\?\/\\\<\+\=>]+/;
+        var regEx = /[\s\n\r\t,\!`\(\)\[\]:;\"\?\/\\\<\+\=>]+/;
         result = { isValid: true, pairs: [] };
         if (text === template) {
             break;

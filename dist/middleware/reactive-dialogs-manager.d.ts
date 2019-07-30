@@ -103,3 +103,4 @@ export default class ReactiveDialogManager {
     /** end the current flow if there is one being executed */
     protected endFlow(context: Iopa.Context, props: any): Promise<void>;
 }
+export declare function getJsonFromUrl(url: any): {};

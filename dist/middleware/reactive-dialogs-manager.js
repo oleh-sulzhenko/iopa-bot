@@ -625,7 +625,7 @@ function renderActionOpenUrl(element, context) {
                 //
                 // <action type="openurl" url="command:pause?delay=500" />
                 //
-                return renderActionCommand(url.pathname.replace(/^\/*/, ''), Object.assign({}, fromEntries(url.searchParams['entries']())), element, context);
+                return renderActionCommand(url.pathname.replace(/^\/*/, ''), getJsonFromUrl(url.query), element, context);
             default:
                 throwErr(`unknown protocol ${url.protocol} on ${element.props.url}`);
                 return Promise.resolve(true);
@@ -665,9 +665,6 @@ function throwErr(...args) {
     var message = Array.prototype.slice.call(args).join(' ');
     throw new Error(message);
 }
-function fromEntries(iterable) {
-    return [...iterable].reduce((obj, { 0: key, 1: val }) => Object.assign(obj, { [key]: val }), {});
-}
 function camelize(str) {
     return str
         .replace(/(?:^\w|[A-Z]|\b\w)/g, function (word, index) {
@@ -675,3 +672,13 @@ function camelize(str) {
     })
         .replace(/\s+/g, '');
 }
+function getJsonFromUrl(url) {
+    var query = url.substr(1);
+    var result = {};
+    query.split("&").forEach(function (part) {
+        var item = part.split("=");
+        result[item[0]] = decodeURIComponent(item[1]);
+    });
+    return result;
+}
+exports.getJsonFromUrl = getJsonFromUrl;
