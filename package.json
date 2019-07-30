@@ -19,8 +19,8 @@
   "dependencies": {
     "alexa-utterances": "^0.2.1",
     "iopa": "^2.0.0",
-    "reactive-cards": "^0.5.7",
-    "reactive-dialogs": "^0.5.8",
+    "reactive-cards": "^0.5.9",
+    "reactive-dialogs": "^0.5.9",
     "whatwg-url": "^7.0.0"
   },
   "keywords": [
