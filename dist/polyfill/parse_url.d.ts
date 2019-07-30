@@ -1,9 +1,8 @@
 interface URL {
     protocol: string;
-    host: string;
+    hostname: string;
     port: string | number;
     pathname: string;
-    path: string;
     query: string;
     hash: string;
 }

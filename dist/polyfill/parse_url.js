@@ -19,9 +19,9 @@ function parse_url(url) {
     var match = url.match(/^(http|https|ftp|dialog|command|)?(?:[\:\/]*)([a-z0-9\.-]*)(?:\:([0-9]+))?(\/[^?#]*)?(?:\?([^#]*))?(?:#(.*))?$/i);
     var ret = new Object();
     ret['protocol'] = '';
-    ret['host'] = match[2];
+    ret['hostname'] = match[2];
     ret['port'] = '';
-    ret['path'] = '';
+    ret['pathname'] = '';
     ret['query'] = '';
     ret['hash'] = '';
     if (match[1]) {
@@ -32,13 +32,15 @@ function parse_url(url) {
         ret['port'] = match[3];
     }
     if (match[4]) {
-        ret['path'] = match[4];
+        ret['pathname'] = match[4];
     }
     if (match[5]) {
-        ret['query'] = match[5];
+        // include the leading '?' to match web standard https://developer.mozilla.org/en-US/docs/Web/API/URL/protocol
+        ret['query'] = `?${match[5]}`;
     }
     if (match[6]) {
-        ret['hash'] = match[6];
+        // include the leading '#' to match web standard https://developer.mozilla.org/en-US/docs/Web/API/URL/protocol
+        ret['hash'] = `#${match[6]}`;
     }
     return ret;
 }
