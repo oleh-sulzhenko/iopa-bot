@@ -34,6 +34,10 @@ function parse_url(url) {
     if (match[4]) {
         ret['pathname'] = match[4];
     }
+    else if (match[2]) {
+        ret['hostname'] = undefined;
+        ret['pathname'] = match[2];
+    }
     if (match[5]) {
         // include the leading '?' to match web standard https://developer.mozilla.org/en-US/docs/Web/API/URL/protocol
         ret['query'] = `?${match[5]}`;

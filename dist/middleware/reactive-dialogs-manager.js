@@ -136,7 +136,7 @@ class ReactiveDialogManager {
             return next();
         console.log('>> skill', botSession[constants_1.BOT.Skill]);
         console.log('>> intent', context[constants_1.BOT.Intent]);
-        console.log('>> dialog', botSession[constants_1.BOT.CurrentDialog]);
+        console.log('>> dialog', JSON.stringify(botSession[constants_1.BOT.CurrentDialog], null, 2));
         //
         // Check if we are checking for a new session or continuing an existing session
         //

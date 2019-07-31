@@ -45,6 +45,9 @@ export function parse_url(url): URL  {
 
   if(match[4]){
       ret['pathname']     = match[4];
+  } else if (match[2]) {
+    ret['hostname']     = undefined;
+    ret['pathname']     = match[2];
   }
 
   if(match[5]){

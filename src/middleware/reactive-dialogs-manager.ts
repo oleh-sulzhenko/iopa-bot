@@ -291,7 +291,7 @@ export default class ReactiveDialogManager {
 
     console.log('>> skill', botSession[BOT.Skill])
     console.log('>> intent', context[BOT.Intent])
-    console.log('>> dialog', botSession[BOT.CurrentDialog])
+    console.log('>> dialog', JSON.stringify(botSession[BOT.CurrentDialog], null, 2))
 
     //
     // Check if we are checking for a new session or continuing an existing session
