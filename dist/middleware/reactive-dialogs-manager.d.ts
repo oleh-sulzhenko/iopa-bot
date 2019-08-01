@@ -1,4 +1,4 @@
-import { FlowElement, DialogElement, ActionElement, CardElement, Element, CustomElement, ActionSetElement } from 'reactive-dialogs';
+import { FlowElement, DialogElement, ActionElement, CardElement, TextElement, ActionOpenUrlElement, Element, CustomElement, ActionSetElement } from 'reactive-dialogs';
 import * as Iopa from 'iopa';
 import Skill from '../schema/skill';
 export interface DialogCapability {
@@ -10,8 +10,14 @@ export declare type CommandHandler = (command: string, props: {
 }, context: Iopa.Context) => Promise<boolean>;
 /** Reactive Dialogs Capability 'urn:io.iopa.bot:reactive-dialogs' */
 export interface ReactiveDialogsCapability {
-    /** register a reactives-dialog flow in the engine; it will not be rendered until renderDialog is called */
-    use(jsx: ({}: {}) => FlowElement): void;
+    /** register a reactives-dialog flow in the engine; it will not be rendered until renderFlow is called */
+    use(
+    /** JSX of dialog flow */
+    jsx: ({}: {}) => FlowElement, 
+    /** property bag of meta data associated with this flow */
+    meta?: {
+        [key: string]: string;
+    }): void;
     /** render an anonymous reactive-dialog flow or set of directives without pre-registration;
      * used for directives or other elements that don't have their own unique intents */
     render(element: Element, context: Iopa.Context, next: () => Promise<void>): Promise<void>;
@@ -27,6 +33,14 @@ export interface ReactiveDialogsCapability {
     registerCommand(command: string, handler: CommandHandler): () => void;
     /** Version of this capability */
     'iopa.Version': string;
+    /** meta data for all currently registered flows */
+    meta: {
+        [key: string]: {
+            [key: string]: string;
+        };
+    };
+    /** set scheme for local resources e.g,, app:// */
+    setLocalResourceProtocol(protocol: string): void;
 }
 export interface SessionCurrentDialog {
     id: string;
@@ -69,6 +83,7 @@ export declare const useBotSession: (context: Iopa.Context) => [ReactiveDialogsS
 export default class ReactiveDialogManager {
     app: any;
     private flows;
+    private flowsMeta;
     private launchIntentsToFlows;
     private commandHandlers;
     /** public IOPA constructor used to register this capability */
@@ -83,7 +98,9 @@ export default class ReactiveDialogManager {
     private _continueFlow;
     protected proceedToNextDirective(context: Iopa.Context, flow: FlowElement, dialog: DialogElement, dialogSeqNo: number, lastDirective: number | null): Promise<void>;
     /** helper method to register a jsx flow element in this capability's inventory  */
-    protected register(app: Iopa.App, jsx: ({}: {}) => FlowElement): void;
+    protected register(app: Iopa.App, jsx: ({}: {}) => FlowElement, meta?: {
+        [key: string]: string;
+    }): void;
     /** helper method to register a single dialog step in this skills inventory  */
     protected registerDialogStep(dialog: DialogElement, skill: Skill): void;
     /** helper method to register a single card in this skills inventory  */
@@ -102,5 +119,18 @@ export default class ReactiveDialogManager {
     protected renderDialogStep(flow: FlowElement, dialog: DialogElement, context: any): Promise<void>;
     /** end the current flow if there is one being executed */
     protected endFlow(context: Iopa.Context, props: any): Promise<void>;
+    protected renderDirective(element: TextElement | CardElement | ActionElement | CustomElement, context: Iopa.Context): Promise<boolean>;
+    protected renderText(element: TextElement, context: Iopa.Context): Promise<boolean>;
+    protected renderCard(element: CardElement, context: Iopa.Context): Promise<boolean>;
+    private saveActionsFromCard;
+    protected renderAction(element: ActionElement, context: Iopa.Context): Promise<boolean>;
+    protected renderActionOpenUrl(element: ActionOpenUrlElement, context: Iopa.Context): Promise<boolean>;
+    protected renderActionDialogFlow(id: string, dialogId: string | undefined, element: ActionOpenUrlElement, context: Iopa.Context): Promise<boolean>;
+    protected logStartOfDialog(context: Iopa.Context): void;
+    protected logAbandondedDialog(context: Iopa.Context): void;
+    protected logCompletedDialog(context: Iopa.Context): void;
+    protected renderActionCommand(command: string, params: {
+        [key: string]: any;
+    }, element: ActionOpenUrlElement, context: Iopa.Context): Promise<boolean>;
 }
 export declare function getJsonFromUrl(url: any): {};

@@ -43,6 +43,7 @@ class ReactiveDialogManager {
     /** public IOPA constructor used to register this capability */
     constructor(app) {
         this.flows = {};
+        this.flowsMeta = {};
         this.launchIntentsToFlows = {};
         this.app = app;
         app.properties[SERVER.CancelTokenSource] =
@@ -56,8 +57,8 @@ class ReactiveDialogManager {
         //
         app.properties[SERVER.Capabilities][constants_1.BOT.CAPABILITIES.ReactiveDialogs] = {
             'iopa.Version': constants_1.BOT.VERSION,
-            use: (jsx) => {
-                this.register(app, jsx);
+            use: (jsx, meta) => {
+                this.register(app, jsx, meta);
             },
             render: (element, context, next) => {
                 return this.render(element, context, next);
@@ -74,7 +75,11 @@ class ReactiveDialogManager {
                     this.commandHandlers.delete(command);
                 };
             },
-            _commandHandlers: this.commandHandlers
+            _commandHandlers: this.commandHandlers,
+            meta: this.flowsMeta,
+            setLocalResourceProtocol: (protocol) => {
+                ReactiveCards.setLocalResourceProtocol(protocol);
+            }
         };
         app.reactivedialogs =
             app.properties[SERVER.Capabilities][constants_1.BOT.CAPABILITIES.ReactiveDialogs];
@@ -263,7 +268,7 @@ class ReactiveDialogManager {
                 case 'submit':
                     return this.proceedToNextDirective(context, flow, dialog, dialogSeqNo, lastDirective);
                 case 'openurl':
-                    return renderActionOpenUrl(action, context);
+                    return this.renderActionOpenUrl(action, context);
                 default:
                     console.log(`card type ${action.props.type} not yet supported in reactive-dialogs manager`);
                     return this.proceedToNextDirective(context, flow, dialog, dialogSeqNo, lastDirective);
@@ -294,7 +299,7 @@ class ReactiveDialogManager {
         }
     }
     /** helper method to register a jsx flow element in this capability's inventory  */
-    register(app, jsx) {
+    register(app, jsx, meta) {
         const flow = jsx({});
         if (!flow) {
             return;
@@ -310,6 +315,7 @@ class ReactiveDialogManager {
             return throwErr(`Tried to register a dialog flow with id ${flowId} that already has been registered;  restart engine first`);
         }
         this.flows[flowId] = flow;
+        this.flowsMeta[flowId] = meta;
         const skill = app.properties[SERVER.Capabilities][constants_1.BOT.CAPABILITIES.Skills].add(flowId);
         //
         // Register all intents used in this flow
@@ -497,7 +503,7 @@ class ReactiveDialogManager {
                 setBotSession({
                     [constants_1.BOT.CurrentDialog]: currentDialog
                 });
-                const isNotWaitingOnPrompt = yield renderDirective(directive, context);
+                const isNotWaitingOnPrompt = yield this.renderDirective(directive, context);
                 return isNotWaitingOnPrompt;
             }));
             if (isNotWaitingOnPrompt) {
@@ -525,134 +531,136 @@ class ReactiveDialogManager {
         context.response[constants_1.BOT.ShouldEndSession] = true;
         return Promise.resolve();
     }
-}
-exports.default = ReactiveDialogManager;
-function renderDirective(element, context) {
-    const vdom = reactive_dialogs_1.render(element);
-    switch (vdom.type) {
-        case 'text':
-            return renderText(vdom, context);
-        case 'card':
-            saveActionsFromCard(vdom, context);
-            return renderCard(vdom, context);
-        case 'action':
-            return renderAction(vdom, context);
-        default:
-            throwErr(`invalid dialog flow: <${element.type}> not a valid dialog directive or card type`);
-            return Promise.resolve(false);
-    }
-}
-function renderText(element, context) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const text = toString(element);
-        const pause = element.props.pause || defaultPauseInterval;
-        yield context.response.sendAll([text]);
-        yield delay(context, pause || defaultPauseInterval);
-        return true;
-    });
-}
-function renderCard(element, context) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const setBotSession = exports.useBotSession(context)[1];
-        const actionset = element.props.children.find(child => child.type == 'actionset');
-        if (actionset) {
-            //
-            // render openurl as submit
-            //
-            actionset.props.children.forEach(action => {
-                if (action.props.type === 'openurl') {
-                    action.props.type = 'submit';
-                    action.props.data = action.props.utterances
-                        ? action.props.utterances[0]
-                        : toString(action).toLowerCase();
-                }
-            });
-            yield setBotSession({ [constants_1.BOT.isMultiChoicePrompt]: true });
-        }
-        const card = ReactiveCards.render(element);
-        const pause = element.props.pause || defaultPauseInterval;
-        yield context.response.sendAll([{ text: '', attachments: [card] }]);
-        yield delay(context, pause || defaultPauseInterval);
-        return !card.actions;
-    });
-}
-function saveActionsFromCard(element, context) {
-    const [botSession, setBotSession] = exports.useBotSession(context);
-    const currentDialog = botSession[constants_1.BOT.CurrentDialog];
-    const actionset = element.props.children.find(actionset => actionset.type == 'actionset');
-    if (!actionset) {
-        return;
-    }
-    currentDialog.lastPromptActions = actionset.props.children.filter(action => action.type == 'action');
-    setBotSession({ [constants_1.BOT.CurrentDialog]: currentDialog });
-}
-function renderAction(element, context) {
-    switch (element.props.type) {
-        case 'openurl':
-            return renderActionOpenUrl(element, context);
-        case 'showcard':
-        case 'submit':
-        default:
-            throwErr(`Invalid action type '${element.props.type}' when used as a direct child of <step>`);
-            return Promise.resolve(true);
-    }
-}
-function renderActionOpenUrl(element, context) {
-    return __awaiter(this, void 0, void 0, function* () {
-        if (!element.props.url) {
-            // continue with dialog next step
-            return renderActionDialogFlow('', '', element, context);
-        }
-        if (element.props.url.indexOf(':') == -1) {
-            element.props.url = `dialog:/` + element.props.url;
-        }
-        const url = parse_url_1.parse_url(element.props.url);
-        switch (url.protocol) {
-            case 'dialog:':
-                const flowId = url.pathname.replace(/^\/*/, '');
-                const dialogId = url.hash ? url.hash.replace(/^#/, '') : undefined;
-                if (!url.hash && !flowId) {
-                    console.log('found blank action url in dialog, continuing');
-                    return Promise.resolve(true);
-                }
-                yield renderActionDialogFlow(flowId, dialogId, element, context);
-                return Promise.resolve(false);
-            case 'https:':
-            case 'http:':
-                yield renderActionCommand('openurl', { url }, element, context);
-                return Promise.resolve(false);
-            case 'command:':
-                //
-                // <action type="openurl" url="command:pause?delay=500" />
-                //
-                return renderActionCommand(url.pathname.replace(/^\/*/, ''), getJsonFromUrl(url.query), element, context);
+    renderDirective(element, context) {
+        const vdom = reactive_dialogs_1.render(element);
+        switch (vdom.type) {
+            case 'text':
+                return this.renderText(vdom, context);
+            case 'card':
+                this.saveActionsFromCard(vdom, context);
+                return this.renderCard(vdom, context);
+            case 'action':
+                return this.renderAction(vdom, context);
             default:
-                throwErr(`unknown protocol ${url.protocol} on ${element.props.url}`);
+                throwErr(`invalid dialog flow: <${element.type}> not a valid dialog directive or card type`);
+                return Promise.resolve(false);
+        }
+    }
+    renderText(element, context) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const text = toString(element);
+            const pause = element.props.pause || defaultPauseInterval;
+            yield context.response.sendAll([text]);
+            yield delay(context, pause || defaultPauseInterval);
+            return true;
+        });
+    }
+    renderCard(element, context) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const [botSession, setBotSession] = exports.useBotSession(context);
+            const actionset = element.props.children.find(child => child.type == 'actionset');
+            if (actionset) {
+                //
+                // render openurl as submit
+                //
+                actionset.props.children.forEach(action => {
+                    if (action.props.type === 'openurl') {
+                        action.props.type = 'submit';
+                        action.props.data = action.props.utterances
+                            ? action.props.utterances[0]
+                            : toString(action).toLowerCase();
+                    }
+                });
+                yield setBotSession({ [constants_1.BOT.isMultiChoicePrompt]: true });
+            }
+            const meta = this.flowsMeta[botSession[constants_1.BOT.Skill]];
+            const resourceRoot = meta ? `${meta["nkar"]}/` : undefined;
+            const card = ReactiveCards.render(element, resourceRoot);
+            const pause = element.props.pause || defaultPauseInterval;
+            yield context.response.sendAll([{ text: '', attachments: [card] }]);
+            yield delay(context, pause || defaultPauseInterval);
+            return !card.actions;
+        });
+    }
+    saveActionsFromCard(element, context) {
+        const [botSession, setBotSession] = exports.useBotSession(context);
+        const currentDialog = botSession[constants_1.BOT.CurrentDialog];
+        const actionset = element.props.children.find(actionset => actionset.type == 'actionset');
+        if (!actionset) {
+            return;
+        }
+        currentDialog.lastPromptActions = actionset.props.children.filter(action => action.type == 'action');
+        setBotSession({ [constants_1.BOT.CurrentDialog]: currentDialog });
+    }
+    renderAction(element, context) {
+        switch (element.props.type) {
+            case 'openurl':
+                return this.renderActionOpenUrl(element, context);
+            case 'showcard':
+            case 'submit':
+            default:
+                throwErr(`Invalid action type '${element.props.type}' when used as a direct child of <step>`);
                 return Promise.resolve(true);
         }
-    });
-}
-function renderActionDialogFlow(id, dialogId, element, context) {
-    return __awaiter(this, void 0, void 0, function* () {
+    }
+    renderActionOpenUrl(element, context) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!element.props.url) {
+                // continue with dialog next step
+                return this.renderActionDialogFlow('', '', element, context);
+            }
+            if (element.props.url.indexOf(':') == -1) {
+                element.props.url = `dialog:/` + element.props.url;
+            }
+            const url = parse_url_1.parse_url(element.props.url);
+            switch (url.protocol) {
+                case 'dialog:':
+                    const flowId = url.pathname.replace(/^\/*/, '');
+                    const dialogId = url.hash ? url.hash.replace(/^#/, '') : undefined;
+                    if (!url.hash && !flowId) {
+                        console.log('found blank action url in dialog, continuing');
+                        return Promise.resolve(true);
+                    }
+                    yield this.renderActionDialogFlow(flowId, dialogId, element, context);
+                    return Promise.resolve(false);
+                case 'https:':
+                case 'http:':
+                    yield this.renderActionCommand('openurl', { url }, element, context);
+                    return Promise.resolve(false);
+                case 'command:':
+                    //
+                    // <action type="openurl" url="command:pause?delay=500" />
+                    //
+                    return this.renderActionCommand(url.pathname.replace(/^\/*/, ''), getJsonFromUrl(url.query), element, context);
+                default:
+                    throwErr(`unknown protocol ${url.protocol} on ${element.props.url}`);
+                    return Promise.resolve(true);
+            }
+        });
+    }
+    renderActionDialogFlow(id, dialogId, element, context) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const reactive = exports.useReactiveDialogs(context);
+            yield reactive.renderFlow(id, dialogId, context, () => Promise.resolve());
+            return false;
+        });
+    }
+    logStartOfDialog(context) { }
+    logAbandondedDialog(context) { }
+    logCompletedDialog(context) { }
+    renderActionCommand(command, params, element, context) {
         const reactive = exports.useReactiveDialogs(context);
-        yield reactive.renderFlow(id, dialogId, context, () => Promise.resolve());
-        return false;
-    });
-}
-function logStartOfDialog(context) { }
-function logAbandondedDialog(context) { }
-function logCompletedDialog(context) { }
-function renderActionCommand(command, params, element, context) {
-    const reactive = exports.useReactiveDialogs(context);
-    const handler = reactive._commandHandlers.get(command);
-    if (handler) {
-        return handler(command, Object.assign({ url: element.props.url, data: element.props.data }, params), context);
-    }
-    else {
-        throwErr(`No handler registered for command ${command} on ${element.props.url}`);
-        return Promise.resolve(true);
+        const handler = reactive._commandHandlers.get(command);
+        if (handler) {
+            return handler(command, Object.assign({ url: element.props.url, data: element.props.data }, params), context);
+        }
+        else {
+            throwErr(`No handler registered for command ${command} on ${element.props.url}`);
+            return Promise.resolve(true);
+        }
     }
 }
+exports.default = ReactiveDialogManager;
 const toString = child => {
     return child.props.children.join('');
 };
