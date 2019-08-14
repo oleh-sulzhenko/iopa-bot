@@ -23,3 +23,7 @@ node_modules
 **/typings/**/*.d.ts
 **/typings/tsd.cached.json
 node_modules/
+
+# build directories
+build/
+dist/
