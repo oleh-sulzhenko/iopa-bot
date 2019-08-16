@@ -2,6 +2,7 @@
   "name": "iopa-bot",
   "version": "2.0.3",
   "main": "dist/index.js",
+  "ts:main": "src/index.ts",
   "types": "dist/index.d.ts",
   "description": "API-First Bot Framework for Internet of Things (IoT), based on Internet of Protocols Alliance (IOPA) specification",
   "author": "iopa <build@iopa.io>",
@@ -40,7 +41,7 @@
     "lint": "berun-scripts lint"
   },
   "devDependencies": {
-    "@types/node": "^12.6.8"
+    "@types/node": "^12.7.2"
   },
   "homepage": "http://iopa.io"
 }

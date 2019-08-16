@@ -1024,7 +1024,7 @@ export default class ReactiveDialogManager {
     
     await delay(context, pause || defaultPauseInterval)
 
-    return !card.actions
+    return !card.actions || (card.actions.length == 0)
   }
 
 
@@ -1151,7 +1151,7 @@ export default class ReactiveDialogManager {
       )
     } else {
       throwErr(
-        `No handler registered for command ${command} on ${element.props.url}`
+        `No handler registered for the command ${command} on ${element.props.url}`
       )
       return Promise.resolve(true)
     }
