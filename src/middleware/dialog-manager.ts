@@ -57,6 +57,7 @@ export default class DialogManager {
     }
 
     app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Dialog] = {
+      dialogs: this.dialogs,
       beginDialog: (
         name: string,
         context: Iopa.Context,
