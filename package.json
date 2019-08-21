@@ -1,6 +1,6 @@
 {
   "name": "iopa-bot",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "main": "dist/index.js",
   "ts:main": "src/index.ts",
   "types": "dist/index.d.ts",
