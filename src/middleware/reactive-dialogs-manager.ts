@@ -1,6 +1,7 @@
 import * as ReactiveCards from 'reactive-cards'
 import {
   FlowElement,
+  TableElement,
   DialogElement,
   ActionElement,
   CardElement,
@@ -39,10 +40,10 @@ const logDebug = true
 
 /** Reactive Dialogs Capability 'urn:io.iopa.bot:reactive-dialogs' */
 export interface ReactiveDialogsCapability {
-  /** register a reactives-dialog flow in the engine; it will not be rendered until renderFlow is called */
+  /** register a reactives-dialog flow or table in the engine; it will not be rendered until renderFlow is called */
   use(
-    /** JSX of dialog flow */
-    jsx: ({ }) => FlowElement,
+    /** JSX of dialog flow / table */
+    jsx: ({ }) => FlowElement | TableElement,
     /** property bag of meta data associated with this flow */
     meta?: { [key: string]: string }
   ): void
@@ -72,6 +73,10 @@ export interface ReactiveDialogsCapability {
   'iopa.Version': string
   /** meta data for all currently registered flows */
   meta: { [key: string]: { [key: string]: string } }
+  /** All currently registered lists */
+  lists: { [key: string]: string[] }
+  /** Meta data for all currently registered tables */
+  tables: { [key: string]: { [key: string]: string | string[] } }
   /** set scheme for local resources e.g,, app:// */
   setLocalResourceProtocol(protocol: string): void
 }
@@ -146,6 +151,8 @@ export default class ReactiveDialogManager {
   app: any
   private flows: { [key: string]: FlowElement } = {}
   private flowsMeta: { [key: string]: { [key: string]: string } } = {}
+  private tableLists: { [key: string]: string[] } = {}
+  private tableMeta: { [key: string]: { [key: string]: string | string[] } } = {}
   private launchIntentsToFlows: { [key: string]: string } = {}
 
   private commandHandlers: Map<string, CommandHandler>
@@ -204,6 +211,10 @@ export default class ReactiveDialogManager {
       _commandHandlers: this.commandHandlers,
 
       meta: this.flowsMeta,
+
+      lists: this.tableLists,
+
+      tables: this.tableMeta,
 
       setLocalResourceProtocol: (protocol: string) => {
         ReactiveCards.setLocalResourceProtocol(protocol)
@@ -593,76 +604,98 @@ export default class ReactiveDialogManager {
     }
   }
 
-  /** helper method to register a jsx flow element in this capability's inventory  */
-  protected register(app: Iopa.App, jsx: ({ }) => FlowElement, meta?: { [key: string]: string }): void {
+  /** helper method to register a jsx flow or table element in this capability's inventory  */
+  protected register(app: Iopa.App, jsx: ({ }) => FlowElement | TableElement, meta?: { [key: string]: string }): void {
 
-    const flow: FlowElement = jsx({})
+    const flow: FlowElement | TableElement = jsx({})
 
     if (!flow) {
       return
     }
 
-    if (flow.type !== 'flow') {
+    if ((flow.type !== 'flow') && (flow.type !== 'table')) {
       return throwErr(
         'Tried to register a flow that is not a reactive-dialogs type'
       ) as any
     }
 
-    //
-    // Register Flow in main inventory
-    //
+    if (flow.type == 'table') {
 
-    const flowId = flow.props.id
+      //
+      // Register Table Lists in main inventory
+      //
 
-    if (flowId in this.flows) {
-      return throwErr(
-        `Tried to register a dialog flow with id ${flowId} that already has been registered;  restart engine first`
-      ) as any
+      const tableId = flow.props.id
+      const lists = flow.props.children
+      this.tableMeta[tableId] = Object.assign({ lists: [] }, meta)
+
+      lists.forEach(list => {
+        const listid = list.props.id
+        const items = list.props.children
+        this.tableLists[listid] = items
+          ; (this.tableMeta[tableId].lists as string[]).push(listid)
+
+        console.log(` registered table ${tableId}  list ${list.props.id}`)
+
+      })
+      return 
     }
 
-    this.flows[flowId] = flow
-    this.flowsMeta[flowId] = meta
+      //
+      // Register Flow in main inventory
+      //
 
-    const skill = app.properties[SERVER.Capabilities][
-      BOT.CAPABILITIES.Skills
-    ].add(flowId) as Skill
+      const flowId = flow.props.id
 
-    //
-    // Register all intents used in this flow
-    //
-
-    flow.props.children.forEach(dialog => {
-      this.registerDialogStep(dialog, skill)
-    })
-
-    //
-    // Add this flow's launch intents to main inventory of launch intents
-    //
-
-    if (flow.props.utterances && flow.props.utterances.length > 0) {
-      if (!Array.isArray(flow.props.utterances)) {
-        throwErr('utterances on <flow> must be an array of strings')
+      if (flowId in this.flows) {
+        return throwErr(
+          `Tried to register a dialog flow with id ${flowId} that already has been registered;  restart engine first`
+        ) as any
       }
 
-      const skills =
-        app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Skills].skills
-      const launchSkill = flow.props.canLaunchFromGlobal
-        ? skills.default
-        : skill
+      this.flows[flowId] = flow 
+      this.flowsMeta[flowId] = meta
 
-      const existingIntent = launchSkill.lookupIntent(flow.props.utterances)
+      const skill = app.properties[SERVER.Capabilities][
+        BOT.CAPABILITIES.Skills
+      ].add(flowId) as Skill
 
-      if (existingIntent) {
-        this.launchIntentsToFlows[existingIntent] = flowId
-      } else {
-        const launchName = `reactiveDialogs:flow:${flowId}:launchIntent`
-        launchSkill.intent(launchName, { utterances: flow.props.utterances })
-        this.launchIntentsToFlows[launchName] = flowId
+      //
+      // Register all intents used in this flow
+      //
+
+      flow.props.children.forEach(dialog => {
+        this.registerDialogStep(dialog, skill)
+      })
+
+      //
+      // Add this flow's launch intents to main inventory of launch intents
+      //
+
+      if (flow.props.utterances && flow.props.utterances.length > 0) {
+        if (!Array.isArray(flow.props.utterances)) {
+          throwErr('utterances on <flow> must be an array of strings')
+        }
+
+        const skills =
+          app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Skills].skills
+        const launchSkill = flow.props.canLaunchFromGlobal
+          ? skills.default
+          : skill
+
+        const existingIntent = launchSkill.lookupIntent(flow.props.utterances)
+
+        if (existingIntent) {
+          this.launchIntentsToFlows[existingIntent] = flowId
+        } else {
+          const launchName = `reactiveDialogs:flow:${flowId}:launchIntent`
+          launchSkill.intent(launchName, { utterances: flow.props.utterances })
+          this.launchIntentsToFlows[launchName] = flowId
+        }
       }
+
+      console.log(' registered ', flowId, skill)
     }
-
-    console.log(' registered ', flowId, skill)
-  }
 
   /** helper method to register a single dialog step in this skills inventory  */
   protected registerDialogStep(dialog: DialogElement, skill: Skill) {
@@ -1021,7 +1054,7 @@ export default class ReactiveDialogManager {
     const pause = element.props.pause || defaultPauseInterval
 
     await context.response.sendAll([{ text: '', attachments: [card] }])
-    
+
     await delay(context, pause || defaultPauseInterval)
 
     return !card.actions || (card.actions.length == 0)
