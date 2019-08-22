@@ -19,14 +19,6 @@ import Skill from '../schema/skill'
 import { asyncForEachIfTrue } from '../util/forEachAsync'
 import { parse_url } from '../polyfill/parse_url'
 
-export interface DialogCapability {
-  beginDialog(
-    name: string,
-    context: Iopa.Context,
-    next: () => Promise<void>
-  ): Promise<void>
-}
-
 /** Custom command handlers return true if should continue after, false to stop current flow */
 export type CommandHandler = (
   command: string,
@@ -345,8 +337,6 @@ export default class ReactiveDialogManager {
       // TO DO: Check for global '*'
       return next()
     }
-
-
 
     return reactive.renderFlow(flowId, null, context, next)
   }
@@ -694,7 +684,7 @@ export default class ReactiveDialogManager {
         }
       }
 
-      console.log(' registered ', flowId, skill)
+      console.log(' registered ', flowId)
     }
 
   /** helper method to register a single dialog step in this skills inventory  */

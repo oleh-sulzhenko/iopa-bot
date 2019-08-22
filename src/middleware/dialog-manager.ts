@@ -20,6 +20,7 @@ const { IOPA, SERVER } = Iopa.constants
 import { BOT } from '../constants'
 
 export interface DialogCapability {
+  dialogs: { [key: string]: Dialog }
   beginDialog(
     name: string,
     context: Iopa.Context,
@@ -65,7 +66,10 @@ export default class DialogManager {
       ) => {
         const dialog = this.dialogs[name]
 
-        if (!dialog) throw new Error('Dialog not recognized')
+        if (!dialog) {
+          console.log(`Dialog ${name} not a v1 dialog`)
+          return next()
+        }
 
         let dialogFunc = dialog.steps[0] as Iopa.FC
 
@@ -86,7 +90,7 @@ export default class DialogManager {
 
         return dialogFunc(context, next)
       }
-    }
+    } as DialogCapability
 
     app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Dialog][IOPA.Version] =
       BOT.VERSION

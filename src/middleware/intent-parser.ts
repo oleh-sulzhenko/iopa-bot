@@ -103,16 +103,17 @@ export default function parseIntent(
 
 function parseSkillIntents(skill: Skill, context: Iopa.Context): boolean {
   let result = false
+  const utterances = skill.utterances().split('\n')
 
   if (context[BOT.Intent] == 'urn:io.iopa.bot:intent:literal') {
     // Go through each intent in the skill to find a valid response.
     for (var i in Object.keys(skill.intents)) {
       var key = Object.keys(skill.intents)[i]
-      result = _matchUtterancesForIntent(skill, context, key)
+      result = _matchUtterancesForIntent(skill, utterances, context, key)
       if (result) break
     }
   } else {
-    result = _matchUtterancesForIntent(skill, context, context[BOT.Intent])
+    result = _matchUtterancesForIntent(skill, utterances, context, context[BOT.Intent])
   }
 
   return result
@@ -149,6 +150,7 @@ function invokeIntent(
 
 function _matchUtterancesForIntent(
   skill: Skill,
+  allutterance: string[],
   context: Iopa.Context,
   intentkey: string
 ): boolean {
@@ -156,9 +158,7 @@ function _matchUtterancesForIntent(
 
   const utterances: string[] = []
 
-  skill
-    .utterances()
-    .split('\n')
+  allutterance
     .forEach(function(template) {
       // Get the intent name from this template line.
       const matches = template.match(/([\/a-zA-Z0-9\.\:]+)\t/)

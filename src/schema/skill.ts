@@ -94,6 +94,9 @@ export default class Skill {
   intent(intentName: string, func: Iopa.FC): this
   intent(intentName: string, schema: any, func?: Iopa.FC): this
   intent(intentName: string, schema: any | Iopa.FC, func?: Iopa.FC): this {
+
+    if (intentName.indexOf(' ') > -1) { throw new Error(`Intent cannot be registered with spaces in the name "${intentName}"`)}
+
     if (typeof schema == 'function') {
       func = schema as Iopa.FC
       schema = null
