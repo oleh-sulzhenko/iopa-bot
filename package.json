@@ -17,12 +17,6 @@
     "type": "git",
     "url": "https://github.com/iopa-io/iopa-bot.git"
   },
-  "dependencies": {
-    "alexa-utterances": "^0.2.1",
-    "iopa": "^2.0.0",
-    "reactive-cards": "^0.5.20",
-    "reactive-dialogs": "^0.5.11"
-  },
   "keywords": [
     "iopa",
     "serverless",
@@ -40,8 +34,15 @@
     "build": "rm -rf ./dist && tsc",
     "lint": "berun-scripts lint"
   },
+  "homepage": "http://iopa.io",
+  "dependencies": {
+    "iopa": "2.0.1",
+    "reactive-cards": "0.5.21",
+    "reactive-dialogs": "0.5.22",
+    "alexa-utterances": "^0.2.1"
+  },
   "devDependencies": {
     "@types/node": "^12.7.2"
   },
-  "homepage": "http://iopa.io"
+  "peerDependencies": {}
 }
