@@ -36,9 +36,9 @@ export interface SkillsCapability {
   /** map of skill names to skills */
   skills: { [key: string]: Skill }
   /** add a new skill with given name and return it */
-  add(name): Skill
+  add(name: string): Skill
   /** get the skill with the given name */
-  skill(name): Skill | undefined
+  skill(name: string): Skill | undefined
 }
 
 export interface AppBotExtensions {
@@ -54,7 +54,7 @@ export interface AppBotExtensions {
   skill(name: string): Skill
 
   /** @deprecated add a v1 dialog;  use reactivedialogs.use() going forward */
-  dialog(name: string, ...args)
+  dialog(name: string, ...args: any[]): void
 
   /** shortcut access to reactivedialogs capability */
   reactivedialogs: ReactiveDialogsCapability
@@ -65,7 +65,7 @@ export interface DialogApp extends Iopa.App, AppBotExtensions {}
 class SkillsManager {
   private defaultSkill: Skill
 
-  constructor(app) {
+  constructor(app: Iopa.App & AppBotExtensions) {
     console.log('REGISTERED SKILLS MANAGER on ' + app.properties[SERVER.AppId])
     app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Skills] = {
       verbose: false,

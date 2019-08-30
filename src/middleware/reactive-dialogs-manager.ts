@@ -23,7 +23,7 @@ import { parse_url } from '../polyfill/parse_url'
 export type CommandHandler = (
   command: string,
   props: { [key: string]: any },
-  context: Iopa.Context
+  context: any
 ) => Promise<boolean>
 
 // TO DO, get from host context
@@ -311,7 +311,7 @@ export default class ReactiveDialogManager {
 
     console.log('>> skill', botSession[BOT.Skill])
     console.log('>> intent', context[BOT.Intent])
-    console.log('>> dialog', JSON.stringify(botSession[BOT.CurrentDialog], null, 2))
+    console.log('>> dialog', botSession[BOT.CurrentDialog] ? botSession[BOT.CurrentDialog].id : "")
 
     //
     // Check if we are checking for a new session or continuing an existing session
@@ -628,64 +628,68 @@ export default class ReactiveDialogManager {
         console.log(` registered table ${tableId}  list ${list.props.id}`)
 
       })
-      return 
+      return
     }
 
-      //
-      // Register Flow in main inventory
-      //
+    //
+    // Register Flow in main inventory
+    //
 
-      const flowId = flow.props.id
+    const flowId = flow.props.id
 
-      if (flowId in this.flows) {
-        return throwErr(
-          `Tried to register a dialog flow with id ${flowId} that already has been registered;  restart engine first`
-        ) as any
-      }
-
-      this.flows[flowId] = flow 
-      this.flowsMeta[flowId] = meta
-
-      const skill = app.properties[SERVER.Capabilities][
-        BOT.CAPABILITIES.Skills
-      ].add(flowId) as Skill
-
-      //
-      // Register all intents used in this flow
-      //
-
-      flow.props.children.forEach(dialog => {
-        this.registerDialogStep(dialog, skill)
-      })
-
-      //
-      // Add this flow's launch intents to main inventory of launch intents
-      //
-
-      if (flow.props.utterances && flow.props.utterances.length > 0) {
-        if (!Array.isArray(flow.props.utterances)) {
-          throwErr('utterances on <flow> must be an array of strings')
-        }
-
-        const skills =
-          app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Skills].skills
-        const launchSkill = flow.props.canLaunchFromGlobal
-          ? skills.default
-          : skill
-
-        const existingIntent = launchSkill.lookupIntent(flow.props.utterances)
-
-        if (existingIntent) {
-          this.launchIntentsToFlows[existingIntent] = flowId
-        } else {
-          const launchName = `reactiveDialogs:flow:${flowId}:launchIntent`
-          launchSkill.intent(launchName, { utterances: flow.props.utterances })
-          this.launchIntentsToFlows[launchName] = flowId
-        }
-      }
-
-      console.log(' registered ', flowId)
+    if (flowId in this.flows) {
+      return throwErr(
+        `Tried to register a dialog flow with id ${flowId} that already has been registered;  restart engine first`
+      ) as any
     }
+
+    this.flows[flowId] = flow
+    this.flowsMeta[flowId] = meta
+
+    const skill = app.properties[SERVER.Capabilities][
+      BOT.CAPABILITIES.Skills
+    ].add(flowId) as Skill
+
+    if (!meta.global) {
+      skill.global(false)
+    }
+
+    //
+    // Register all intents used in this flow
+    //
+
+    flow.props.children.forEach(dialog => {
+      this.registerDialogStep(dialog, skill)
+    })
+
+    //
+    // Add this flow's launch intents to main inventory of launch intents
+    //
+
+    if (flow.props.utterances && flow.props.utterances.length > 0) {
+      if (!Array.isArray(flow.props.utterances)) {
+        throwErr('utterances on <flow> must be an array of strings')
+      }
+
+      const skills =
+        app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Skills].skills
+      const launchSkill = flow.props.canLaunchFromGlobal
+        ? skills.default
+        : skill
+
+      const existingIntent = launchSkill.lookupIntent(flow.props.utterances)
+
+      if (existingIntent) {
+        this.launchIntentsToFlows[existingIntent] = flowId
+      } else {
+        const launchName = `reactiveDialogs:flow:${flowId}:launchIntent`
+        launchSkill.intent(launchName, { utterances: flow.props.utterances })
+        this.launchIntentsToFlows[launchName] = flowId
+      }
+    }
+
+    console.log(' registered ', flowId)
+  }
 
   /** helper method to register a single dialog step in this skills inventory  */
   protected registerDialogStep(dialog: DialogElement, skill: Skill) {

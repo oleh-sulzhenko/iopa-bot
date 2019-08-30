@@ -150,8 +150,9 @@ export default class DialogManager {
     var dialog = this.dialogs[sessionDialog.name]
 
     if (!dialog) {
-      // not a recognized dialog so clear
-      context[BOT.Session][BOT.CurrentDialog] = null
+        // not a recognized flow but do not clear in case its a V2 dialog 
+      // with invalid consumer input, in which case we need to retain the 
+      // current dialog information to continue after the 
       return this._matchBeginDialog(context, next)
     }
 
