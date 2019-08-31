@@ -107,7 +107,7 @@ class SkillsManager {
 }
 
 const IopaBotFramework = function(this, app: Iopa.App) {
-  this.ref = new SkillsManager(app)
+  this.ref = new SkillsManager(app as any)
 }
 
 IopaBotFramework.connectors = {} as { [key: string]: (app: any) => any }
