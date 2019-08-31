@@ -36,10 +36,10 @@
   },
   "homepage": "http://iopa.io",
   "dependencies": {
-    "alexa-utterances": "^0.2.1",
-    "iopa": "2.0.1",
-    "reactive-cards": "0.5.21",
-    "reactive-dialogs": "0.5.22"
+    "iopa": "2.0.2",
+    "reactive-cards": "0.5.24",
+    "reactive-dialogs": "0.5.24",
+    "alexa-utterances": "^0.2.1"
   },
   "devDependencies": {
     "@types/node": "^12.7.2"
