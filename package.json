@@ -37,8 +37,8 @@
   "homepage": "http://iopa.io",
   "dependencies": {
     "iopa": "2.0.2",
-    "reactive-cards": "0.5.24",
-    "reactive-dialogs": "0.5.24",
+    "reactive-cards": "0.5.25",
+    "reactive-dialogs": "0.5.25",
     "alexa-utterances": "^0.2.1"
   },
   "devDependencies": {

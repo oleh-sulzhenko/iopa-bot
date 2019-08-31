@@ -81,6 +81,8 @@ export default class SessionMiddleware implements Iopa.Component {
           }
           db.put(dbpath, session)
           return session
+        } else {
+          session.id = id
         }
 
         if (timeout && timeout > 0) {
