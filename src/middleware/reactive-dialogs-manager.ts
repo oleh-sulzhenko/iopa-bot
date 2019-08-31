@@ -69,8 +69,8 @@ export interface ReactiveDialogsCapability {
   lists: { [key: string]: string[] }
   /** Meta data for all currently registered tables */
   tables: { [key: string]: { [key: string]: string | string[] } }
-  /** set scheme for local resources e.g,, app:// */
-  setLocalResourceProtocol(protocol: string): void
+  /** set function that adds scheme for local resources e.g,, app:// */
+  setLocalResourceProtocolMapper(mapper: (partial_url: string) => string): void
 }
 
 interface ReactiveDialogsCapabilityPrivate extends ReactiveDialogsCapability {
@@ -208,8 +208,8 @@ export default class ReactiveDialogManager {
 
       tables: this.tableMeta,
 
-      setLocalResourceProtocol: (protocol: string) => {
-        ReactiveCards.setLocalResourceProtocol(protocol)
+      setLocalResourceProtocolMapper(mapper: (partial_url: string) => string) {
+        ReactiveCards.setLocalResourceProtocolMapper(mapper)
       }
 
     } as ReactiveDialogsCapabilityPrivate
