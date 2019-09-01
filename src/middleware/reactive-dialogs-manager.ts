@@ -69,13 +69,15 @@ export interface ReactiveDialogsCapability {
   lists: { [key: string]: string[] }
   /** Meta data for all currently registered tables */
   tables: { [key: string]: { [key: string]: string | string[] } }
-  /** set function that adds scheme for local resources e.g,, app:// */
-  setLocalResourceProtocolMapper(mapper: (partial_url: string) => string): void
+  /** property function that adds scheme for local resources e.g,, app:// */
+  localResourceProtocolMapper: (partial_url: string) => string
 }
 
 interface ReactiveDialogsCapabilityPrivate extends ReactiveDialogsCapability {
   /** map of command name and associated handlers, push to this array to register additional platform commands */
   _commandHandlers: Map<string, CommandHandler>
+   /** local version of ReactiveDialogsCapability.localResourceProtocolMapper */
+  _localResourceProtocolMapper: (partial_url: string) => string
 }
 
 export interface SessionCurrentDialog {
@@ -148,6 +150,7 @@ export default class ReactiveDialogManager {
   private launchIntentsToFlows: { [key: string]: string } = {}
 
   private commandHandlers: Map<string, CommandHandler>
+  private _localResourceProtocolMapper: (partial_url: string) => string = (partial_url) => partial_url
 
   /** public IOPA constructor used to register this capability */
   constructor(app) {
@@ -208,8 +211,13 @@ export default class ReactiveDialogManager {
 
       tables: this.tableMeta,
 
-      setLocalResourceProtocolMapper(mapper: (partial_url: string) => string) {
+      set localResourceProtocolMapper(mapper: (partial_url: string) => string) {
+        this._localResourceProtocolMapper = mapper
         ReactiveCards.setLocalResourceProtocolMapper(mapper)
+      },
+
+      get localResourceProtocolMapper() {
+        return this._localResourceProtocolMapper
       }
 
     } as ReactiveDialogsCapabilityPrivate
@@ -595,7 +603,7 @@ export default class ReactiveDialogManager {
   }
 
   /** helper method to register a jsx flow or table element in this capability's inventory  */
-  protected register(app: Iopa.App, jsx: ({ }) => FlowElement | TableElement, meta?: { [key: string]: string }): void {
+  protected register(app: Iopa.App, jsx: ({ }) => FlowElement | TableElement, meta: { [key: string]: string } = {}): void {
 
     const flow: FlowElement | TableElement = jsx({})
 
