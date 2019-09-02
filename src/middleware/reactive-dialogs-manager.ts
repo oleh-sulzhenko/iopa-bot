@@ -150,7 +150,7 @@ export default class ReactiveDialogManager {
   private launchIntentsToFlows: { [key: string]: string } = {}
 
   private commandHandlers: Map<string, CommandHandler>
-  private _localResourceProtocolMapper: (partial_url: string) => string = (partial_url) => partial_url
+  private _localResourceProtocolMapper: (partial_url: string) => string = (partial_url) => partial_url || ''
 
   /** public IOPA constructor used to register this capability */
   constructor(app) {
@@ -1049,7 +1049,7 @@ export default class ReactiveDialogManager {
 
     const meta = this.flowsMeta[botSession[BOT.Skill]]
 
-    const resourceRoot = meta ? `${meta["nkar"]}/` : undefined
+    const resourceRoot = (meta && meta["nkar"]) ? `${meta["nkar"]}/` : ''
 
     const card = ReactiveCards.render(element, resourceRoot)
 
