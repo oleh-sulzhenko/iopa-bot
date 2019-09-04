@@ -455,7 +455,7 @@ export default class ReactiveDialogManager {
         ...botSession[BOT.Variables],
         [`${dialogId}${lastDirective ? `.${lastDirective}` : ''}`]: intent,
         [`${dialogId}${
-          lastDirective ? `.${lastDirective}.raw` : '.raw'
+          lastDirective ? `.${lastDirective}:raw` : ':raw'
           }`]: context[BOT.Text]
       }
     })
