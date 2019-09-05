@@ -300,8 +300,16 @@ export default class ReactiveDialogManager {
     // a new flow
     //
     if (context['urn:bot:dialog:invoke']) {
-      const flowId = context['urn:bot:dialog:invoke']
-      return flows.renderFlow(flowId, null, context, next)
+      let flowId: string = context['urn:bot:dialog:invoke']
+      let dialogId: string = null!
+
+      if (flowId.indexOf('#') >= 0) {
+        let split = flowId.split('#', 2)
+        flowId = split[0]
+        dialogId = split[1]
+      }
+
+      return flows.renderFlow(flowId, dialogId, context, next)
     }
 
     //
