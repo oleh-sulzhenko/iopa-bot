@@ -26,9 +26,7 @@ export type CommandHandler = (
   context: any
 ) => Promise<boolean>
 
-// TO DO, get from host context
 const defaultPauseInterval = 200
-const logDebug = true
 
 /** Reactive Dialogs Capability 'urn:io.iopa.bot:reactive-dialogs' */
 export interface ReactiveDialogsCapability {
