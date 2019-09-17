@@ -869,10 +869,10 @@ export default class ReactiveDialogManager {
     } else if (dialogId) {
       dialogStep = flow.props.children.find(c => c.props.id === dialogId)!
       if (!dialogStep) {
-        console.log(
-          `Step ${dialogId} not found on dialog ${flowId};  starting with first dialog step`
+        console.error(
+          `Step ${dialogId} not found on dialog ${flowId};`
         )
-        dialogStep = flow.props.children[0]
+        return Promise.resolve()
       }
     } else {
       dialogStep = flow.props.children[0]
