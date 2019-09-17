@@ -900,7 +900,12 @@ export default class ReactiveDialogManager {
       [BOT.Variables]: botSession[BOT.Variables] || {}
     })
 
-    return this.renderDialogStep(flow, dialogStep, context)
+    setTimeout(() => {
+      this.renderDialogStep(flow, dialogStep, context)
+    }, 0)
+
+    return next()
+
   }
 
   /** render a given react-dialogs dialog step element to the host platform */
