@@ -702,7 +702,7 @@ export default class ReactiveDialogManager {
       }
     }
 
-    console.log(' registered ', flowId)
+    console.log(`registered dialog flow ${flowId}`);
   }
 
   /** helper method to register a single dialog step in this skills inventory  */
