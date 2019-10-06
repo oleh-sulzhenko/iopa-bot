@@ -1,6 +1,6 @@
 {
   "name": "iopa-bot",
-  "version": "2.1.6",
+  "version": "2.1.7",
   "main": "dist/index.js",
   "ts:main": "src/index.ts",
   "types": "src/index.ts",
@@ -38,8 +38,8 @@
   "dependencies": {
     "alexa-utterances": "^0.2.1",
     "iopa": "2.0.2",
-    "reactive-cards": "0.5.30",
-    "reactive-dialogs": "0.5.30"
+    "reactive-cards": "0.5.31",
+    "reactive-dialogs": "0.5.31"
   },
   "devDependencies": {
     "@types/node": "^12.7.11"
