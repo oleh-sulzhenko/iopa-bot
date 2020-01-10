@@ -88,6 +88,8 @@ export default class DialogManager {
           }
         }
 
+        resetSessionSkill(context)
+
         return dialogFunc(context, next)
       }
     } as DialogCapability
@@ -135,6 +137,7 @@ export default class DialogManager {
             step: 2,
             totalSteps: dialog.steps.length
           }
+          resetSessionSkill(context)
           break
         }
       }
@@ -160,6 +163,7 @@ export default class DialogManager {
       // was at end of dialog so just clear
       context[BOT.Session][BOT.CurrentDialog] = null
       context[BOT.Session][BOT.LastDialogEndedDate] = new Date().getTime()
+      resetSessionSkill(context)
       return this._matchBeginDialog(context, next)
     }
 
@@ -189,4 +193,9 @@ export default class DialogManager {
 
     return dialogFunc(context, next)
   }
+}
+
+function resetSessionSkill(context) {
+  context[BOT.Session][BOT.Skill] = 'default'
+  context[BOT.Session][BOT.SkillVersion] = undefined
 }
