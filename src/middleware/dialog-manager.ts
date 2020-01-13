@@ -197,5 +197,5 @@ export default class DialogManager {
 
 function resetSessionSkill(context: Iopa.Context) {
   context[BOT.Session][BOT.Skill] = 'default'
-  context[BOT.Session][BOT.SkillVersion] = undefined
+  delete context[BOT.Session][BOT.SkillVersion]
 }
