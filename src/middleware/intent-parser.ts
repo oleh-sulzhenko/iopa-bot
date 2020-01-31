@@ -1,6 +1,6 @@
 /*
  * Iopa Bot Framework
- * Copyright (c) 2016-2019 Internet of Protocols Alliance
+ * Copyright (c) 2016-2020 Internet of Protocols Alliance
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,44 +15,36 @@
  * limitations under the License.
  */
 
-import * as Iopa from 'iopa'
-const { SERVER } = Iopa.constants
+import { IopaBotContext, BotSkill, IopaBotSession } from 'iopa-types'
 import { BOT } from '../constants'
-import { Session } from 'inspector'
-import { SkillsCapability } from '../iopa-bot-framework'
-import Skill from '../schema/skill'
 
 export default function parseIntent(
-  context: Iopa.Context,
+  context: IopaBotContext,
   next: () => Promise<void>
 ): Promise<void> {
   // Ensure this context record is actually a valid (bot) message
-  if (!context[BOT.Session] || !context[BOT.Text]) {
+  if (!context.get('bot.Session') || !context.get('bot.Text')) {
     return next()
   }
 
-  const session: Session = context[BOT.Session]
-  const skills = (context[SERVER.Capabilities][
-    BOT.CAPABILITIES.Skills
-  ] as SkillsCapability).skills
+  const session: IopaBotSession = context.get('bot.Session')
+  const { skills } = context.capability('urn:io.iopa.bot:skills')
 
-  context[BOT.Slots] = {}
-
-  let skill: Skill
+  context.set('bot.Slots', {})
 
   //
   // FIRST CHECK CURRENT SKILL (IF IN SESSION)
   //
 
-  if (session[BOT.Skill]) {
-    skill = skills[session[BOT.Skill]]
+  if (session.get('bot.Skill')) {
+    const skill = skills[session.get('bot.Skill')]
 
     if (!skill) {
       // not a recognized skill so clear
-      context[BOT.Session][BOT.Skill] = null
+      session.set('bot.Skill', null)
     } else if (parseSkillIntents(skill, context)) {
-      session[BOT.NewSession] = false
-      session[BOT.Skill] = skill.name
+      session.set('bot.NewSession', false)
+      session.set('bot.Skill', skill.name)
       return invokeIntent(context, next)
     }
   }
@@ -60,160 +52,158 @@ export default function parseIntent(
   //
   // CHECK DEFAULT SKILL (IF DIFFERENT)
   //
-
-  if (session[BOT.Skill] != 'default') {
-    skill = skills['default']
+  if (session.get('bot.Skill') !== 'default') {
+    const skill = skills.default
 
     if (parseSkillIntents(skill, context)) {
-      session[BOT.NewSession] = false
-      session[BOT.Skill] = 'default'
+      session.set('bot.NewSession', false)
+      session.set('bot.Skill', 'default')
       return invokeIntent(context, next)
     }
-
   }
 
   //
   // CHECK ALL OTHER GLOBAL SKILLS
   //
-
-  for (let key in skills) {
-    let skill = skills[key]
+  Object.keys(skills).some(key => {
+    const skill = skills[key]
 
     if (
       skill.isGlobal() &&
-      skill.name != 'default' &&
-      skill.name != session[BOT.Skill]
+      skill.name !== 'default' &&
+      skill.name !== session.get('bot.Skill')
     ) {
       if (parseSkillIntents(skill, context)) {
-        if (!session[BOT.Skill]) {
-          session[BOT.NewSession] = true
+        if (!session.get('bot.Skill')) {
+          session.set('bot.NewSession', true)
         } else {
-          session[BOT.NewSession] = false
+          session.set('bot.NewSession', false)
         }
 
-        session[BOT.Skill] = skill.name
+        session.set('bot.Skill', skill.name)
 
-        break
+        return true // break
       }
     }
-  }
+    return false // continue
+  })
 
   return invokeIntent(context, next)
 }
 
-function parseSkillIntents(skill: Skill, context: Iopa.Context): boolean {
+function parseSkillIntents(skill: BotSkill, context: IopaBotContext): boolean {
   let result = false
   const utterances = skill.utterances().split('\n')
 
-  if (context[BOT.Intent] == 'urn:io.iopa.bot:intent:literal') {
+  if (context.get('bot.Intent') === 'urn:io.iopa.bot:intent:literal') {
     // Go through each intent in the skill to find a valid response.
-    for (var i in Object.keys(skill.intents)) {
-      var key = Object.keys(skill.intents)[i]
-      result = _matchUtterancesForIntent(skill, utterances, context, key)
-      if (result) break
-    }
+    Object.keys(skill.intents).some(key =>
+      _matchUtterancesForIntent(skill, utterances, context, key)
+    )
   } else {
-    result = _matchUtterancesForIntent(skill, utterances, context, context[BOT.Intent])
+    result = _matchUtterancesForIntent(
+      skill,
+      utterances,
+      context,
+      context.get('bot.Intent')
+    )
   }
 
   return result
 }
 
 function invokeIntent(
-  context: Iopa.Context,
+  context: IopaBotContext,
   next: () => Promise<void>
 ): Promise<void> {
+  const session: IopaBotSession = context.get('bot.Session')
 
-  const session: Session = context[BOT.Session]
+  const { skills } = context.capability('urn:io.iopa.bot:skills')
 
-  const skills = (context[SERVER.Capabilities][
-    BOT.CAPABILITIES.Skills
-  ] as SkillsCapability).skills
-
-  if (!context[BOT.Intent]) {
+  if (!context.get('bot.Intent')) {
     return next()
   }
 
-  if (!session[BOT.Skill]) {
-    session[BOT.Skill] = 'default'
+  if (!session.get('bot.Skill')) {
+    session.set('bot.Skill', 'default')
   }
 
-  let intent = skills[session[BOT.Skill]].intents[context[BOT.Intent]]
+  const intent =
+    skills[session.get('bot.Skill')].intents[context.get('bot.Intent')]
 
-
-  if (intent && intent['function']) {
-    return intent['function'](context, next)
+  if (intent && intent.function) {
+    return intent.function(context, next)
   }
 
   return next()
 }
 
 function _matchUtterancesForIntent(
-  skill: Skill,
+  skill: BotSkill,
   allutterance: string[],
-  context: Iopa.Context,
+  context: IopaBotContext,
   intentkey: string
 ): boolean {
-  const input: string = context[BOT.Text]
+  const input: string = context.get('bot.Text')
 
   const utterances: string[] = []
 
-  allutterance
-    .forEach(function(template) {
-      // Get the intent name from this template line.
-      const matches = template.match(/([\/a-zA-Z0-9\.\:]+)\t/)
-      if (matches && matches[1] == intentkey) {
-        // The intent matches ours, let's use it. First, strip out intent name.
-        const start = template.indexOf('\t')
-        template = template.substring(start + 1)
-
-        // Add this utterance for processing.
-        utterances.push(template)
-      }
-    })
+  allutterance.forEach(template => {
+    // Get the intent name from this template line.
+    const matches = template.match(/([/a-zA-Z0-9.:]+)\t/)
+    if (matches && matches[1] === intentkey) {
+      // The intent matches ours, let's use it. First, strip out intent name.
+      const start = template.indexOf('\t')
+      // Add this utterance for processing.
+      utterances.push(template.substring(start + 1))
+    }
+  })
 
   if (!skill.intents[intentkey]) {
-    if (intentkey != BOT.INTENTS.Launch)
-      context.log('Missing Schema for intent ' + intentkey)
+    if (intentkey !== BOT.INTENTS.Launch) {
+      console.log(`Missing Schema for intent ${intentkey}`)
+    }
     return false
   }
 
   const slots = skill.intents[intentkey].schema
     ? skill.intents[intentkey].schema.slots
     : null
-  let result = _parseText(input, utterances, slots, skill.dictionaries)
+  const result = _parseText(input, utterances, slots, skill.dictionaries)
 
   if (result.isValid) {
-    let session = context[BOT.Session]
-    context[BOT.Intent] = intentkey
-    context[BOT.Slots] = {}
-    for (let j in result.pairs) {
-      let pair = result.pairs[j]
-      context[BOT.Slots][pair.name] = pair.value
-    }
+    context.set('bot.Intent', intentkey)
+    const newSlots: { [key: string]: string } = {}
+    result.pairs.forEach(pair => {
+      newSlots[pair.name] = pair.value
+    })
+    context.set('bot.Slots', newSlots)
   }
 
   return result.isValid
 }
 
+const REGEX = /[\s\n\r\t,!`()[]:;"?\/\\<+=>]+/
+const REGEX2 = /{([a-zA-Z0-9_']+)\|([a-zA-Z0-9]+)}/
+const REGEX3 = /^(\{.+\})$/
+
 function _parseText(
-  text: string,
+  textToParse: string,
   utterances: string[],
   slots: string[],
   dictionary: { [key: string]: string[] }
 ) {
-  var result = {
+  let text = textToParse
+  let result = {
     isValid: false,
     pairs: [] as { name: string; value: string }[]
   }
 
-  for (var h in utterances) {
-    var template = utterances[h]
-    var regEx = /[\s\n\r\t,\!`\(\)\[\]:;\"\?\/\\\<\+\=>]+/
+  utterances.forEach(template => {
     result = { isValid: true, pairs: [] }
 
     if (text === template) {
-      break
+      return true // break
     }
 
     if (template && template.length > 0) {
@@ -221,28 +211,28 @@ function _parseText(
       text = text.replace(/(^\.+)|(\.+$)/g, '').toLowerCase()
 
       // Find all variables and fill in values.
-      var tokens = template.split(regEx).filter(function(e) {
+      const tokens = template.split(REGEX).filter(e => {
         return e
       })
-      var words = text.split(regEx).filter(function(e) {
+      const words = text.split(REGEX).filter(e => {
         return e
       }) // remove empty strings.
 
-      if (tokens.length == words.length) {
-        for (var i = 0; i < tokens.length; i++) {
-          var token = tokens[i]
-          var word = words[i]
+      if (tokens.length === words.length) {
+        tokens.some((token, i) => {
+          const word = words[i]
 
-          if (token != word) {
+          if (token !== word) {
             // A word doesn't match, but is it a variable?
-            var tokenParts = token.match(/{([a-zA-Z0-9\_\']+)\|([a-zA-Z0-9]+)}/)
-            if (tokenParts && tokenParts.length == 3) {
+            const tokenParts = token.match(REGEX2)
+            if (tokenParts && tokenParts.length === 3) {
               // Found a variable.
-              var name = tokenParts[2]
+              const name = tokenParts[2]
 
               // Check if the value matches the variable type.
-              var isValidType: boolean
-              var type = slots[name]
+              let isValidType: boolean
+              let utteranceValue: string
+              const type = slots[name]
               switch (type) {
                 case 'NUMBER':
                   isValidType = !!parseFloat(word)
@@ -256,56 +246,54 @@ function _parseText(
                 default:
                   isValidType = false
                   // This is a slot variable, check if the value exists in the dictionary.
-                  var utteranceValue = tokenParts[1]
-                  if (utteranceValue.toLowerCase() == word.toLowerCase()) {
+                  // eslint-disable-next-line prefer-destructuring
+                  utteranceValue = tokenParts[1]
+                  if (utteranceValue.toLowerCase() === word.toLowerCase()) {
                     isValidType = true
                   } else if (dictionary && dictionary[type]) {
-                    var array = dictionary[type]
-                    var arraylength = array.length
-
-                    for (var j = 0; j < arraylength; j++) {
-                      var dictionaryValue = dictionary[type][j]
-                      if (word.toLowerCase() == dictionaryValue.toLowerCase()) {
-                        isValidType = true
-                        break
-                      }
-                    }
+                    isValidType = dictionary[type].some(
+                      dictionaryValue =>
+                        word.toLowerCase() === dictionaryValue.toLowerCase()
+                    )
                   }
+                  break
               }
 
               if (isValidType) {
                 // It's a valid variable and type.
-                result.pairs.push({ name: name, value: word })
+                result.pairs.push({ name, value: word })
               } else {
                 // It's a variable, but the type is wrong (ie., text supplied where a number should be, etc).
                 result.isValid = false
-                break
+                return true // break
               }
-            } else if (token && /^(\{.+\})$/.test(token)) {
+            } else if (token && REGEX3.test(token)) {
               // token is a custom slot type {SomeType}.
-              var name = token.substring(1, token.length - 1)
+              const name = token.substring(1, token.length - 1)
               if (slots[name]) {
                 // This is a valid custom slot type.
-                result.pairs.push({ name: name, value: word })
+                result.pairs.push({ name, value: word })
               }
             } else {
               result.isValid = false
-              break
+              return true // break
             }
           }
-        }
+          return false // continue
+        })
       } else {
         result.isValid = false
-        continue
+        return false // continue
       }
     } else {
       result.isValid = false
     }
 
     if (result.isValid) {
-      break
+      return true // break
     }
-  }
+    return false // continue
+  })
 
   return result
 }

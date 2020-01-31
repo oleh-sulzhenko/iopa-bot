@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /*
  * Iopa Bot Framework
- * Copyright (c) 2016-2019 Internet of Protocols Alliance
+ * Copyright (c) 2016-2020 Internet of Protocols Alliance
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,100 +17,78 @@
  */
 
 import './polyfill/array'
-import * as Iopa from 'iopa'
-const { IOPA, SERVER } = Iopa.constants
+import { IopaBotApp, BotSkill, IopaBotContext } from 'iopa-types'
 import { BOT } from './constants'
 
-import { default as sessionMiddleware } from './middleware/session'
-import { default as DialogManagerMiddleware } from './middleware/dialog-manager'
-import { default as ReactiveDialogsMiddleware, 
-  ReactiveDialogsCapability
-} from './middleware/reactive-dialogs-manager'
-import { default as IntentParserMiddleware } from './middleware/intent-parser'
-import { default as Skill } from './schema/skill'
+import sessionMiddleware from './middleware/session'
+import DialogManagerMiddleware from './middleware/dialog-manager'
+import ReactiveDialogsMiddleware from './middleware/reactive-dialogs-manager'
+import IntentParserMiddleware from './middleware/intent-parser'
+import Skill from './schema/skill'
 
-export interface SkillsCapability {
-  /** debugging is verbose for this skill */
-  verbose: boolean
-  /**  session timeout in milliseconds, 0 to disable */
-  timeout: 300000 //
-  /** map of skill names to skills */
-  skills: { [key: string]: Skill }
-  /** add a new skill with given name and return it */
-  add(name: string): Skill
-  /** get the skill with the given name */
-  skill(name: string): Skill | undefined
-}
+export default class IopaBotFramework {
+  private defaultSkill: BotSkill
 
-export interface AppBotExtensions {
-  /** register a new intent handler for the default skill  */
-  intent(intentName: string, func: Iopa.FC): Skill
-  intent(intentName: string, schema: any, func?: Iopa.FC): Skill
-  intent(intentName: string, schema: any | Iopa.FC, func?: Iopa.FC): Skill
+  private skills: { [key: string]: BotSkill } = {}
 
-  /** register a new dictionary for the default skill  */
-  dictionary(dictionary: { [key: string]: string[] }): Skill
-
-  /** register a new skill  */
-  skill(name: string): Skill
-
-  /** @deprecated add a v1 dialog;  use reactivedialogs.use() going forward */
-  dialog(name: string, ...args: any[]): void
-
-  /** shortcut access to reactivedialogs capability */
-  reactivedialogs: ReactiveDialogsCapability
-}
-
-export interface DialogApp extends Iopa.App, AppBotExtensions {}
-
-class SkillsManager {
-  private defaultSkill: Skill
-
-  constructor(app: Iopa.App & AppBotExtensions) {
-    console.log('REGISTERED SKILLS MANAGER on ' + app.properties[SERVER.AppId])
-    app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Skills] = {
+  constructor(app: IopaBotApp) {
+    console.log(
+      `REGISTERED SKILLS MANAGER on ${app.properties.get('server.AppId')}`
+    )
+    app.setCapability('urn:io.iopa.bot:skills', {
+      'iopa.Version': BOT.VERSION,
       verbose: false,
       timeout: 300000, // session timeout in milliseconds, 0 to disable
-      skills: {} as { [key: string]: Skill },
+      skills: this.skills,
 
-      add: function(name) {
-        if (!this.skills[name]) this.skills[name] = new Skill(name)
+      add: name => {
+        if (!this.skills[name]) {
+          this.skills[name] = new Skill(name)
+        }
         return this.skills[name]
       },
 
-      skill: function(name) {
+      skill: name => {
         return this.skills[name]
       }
-    } as SkillsCapability
+    })
 
-    app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Skills][IOPA.Version] =
-      BOT.VERSION
-    this.defaultSkill = app.properties[SERVER.Capabilities][
-      BOT.CAPABILITIES.Skills
-    ].add('default')
+    this.defaultSkill = app.capability('urn:io.iopa.bot:skills').add('default')
 
     app.intent = this.defaultSkill.intent.bind(this.defaultSkill)
     app.dictionary = this.defaultSkill.dictionary.bind(this.defaultSkill)
 
-    app.skill = function(name: string) {
+    app.skill = (name: string) => {
       name = name || 'default'
-      return app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Skills].add(
-        name
-      )
+      return app.capability('urn:io.iopa.bot:skills').add(name)
     }
-    
-    app.use(sessionMiddleware, "iopa-bot-sessionMiddleware")
-    app.use(IntentParserMiddleware, "iopa-bot-IntentParserMiddleware")
-    app.use(ReactiveDialogsMiddleware, "iopa-bot-ReactiveDialogsMiddleware")
-    app.use(DialogManagerMiddleware, "iopa-bot-DialogManagerMiddleware")
-    console.log("registered iopa-bot middleware")
+
+    app.use((context: IopaBotContext, next: () => Promise<void>) => {
+      if (context.response) {
+        context.response.get =
+          context.response.get ||
+          ((key: any) => {
+            return context.response[key]
+          })
+
+        context.response.set =
+          context.response.set ||
+          ((key: any, value: any) => {
+            context.response[key] = value
+          })
+
+        context.response.set(
+          'server.Capabilities',
+          context.get('server.Capabilities')
+        )
+      }
+      return next()
+    }, 'iopa-bot-framework')
+
+    app.use(sessionMiddleware, 'iopa-bot-sessionMiddleware')
+    app.use(IntentParserMiddleware, 'iopa-bot-IntentParserMiddleware')
+    app.use(ReactiveDialogsMiddleware, 'iopa-bot-ReactiveDialogsMiddleware')
+    app.use(DialogManagerMiddleware, 'iopa-bot-DialogManagerMiddleware')
+    console.log('registered iopa-bot middleware')
   }
 }
-
-const IopaBotFramework = function(this, app: Iopa.App) {
-  this.ref = new SkillsManager(app as any)
-}
-
-IopaBotFramework.connectors = {} as { [key: string]: (app: any) => any }
-
-export default IopaBotFramework

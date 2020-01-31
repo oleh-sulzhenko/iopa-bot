@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable class-methods-use-this */
 import * as ReactiveCards from 'reactive-cards'
 import {
   FlowElement,
@@ -12,12 +14,18 @@ import {
   ActionSetElement,
   render
 } from 'reactive-dialogs'
-import * as Iopa from 'iopa'
-const { IOPA, SERVER } = Iopa.constants
+import { util } from 'iopa'
+import {
+  IopaBotApp,
+  IopaBotContext,
+  IReactiveDialogsCapability,
+  ReactiveDialogsSession,
+  SessionCurrentDialog
+} from 'iopa-types'
 import { BOT } from '../constants'
 import Skill from '../schema/skill'
-import { asyncForEachIfTrue } from '../util/forEachAsync'
-import { parse_url } from '../polyfill/parse_url'
+import { asyncForEachIfTrue } from '../util/for-each-async'
+import parseUrl from '../polyfill/parse-url'
 
 /** Custom command handlers return true if should continue after, false to stop current flow */
 export type CommandHandler = (
@@ -28,104 +36,31 @@ export type CommandHandler = (
 
 const defaultPauseInterval = 200
 
-/** Reactive Dialogs Capability 'urn:io.iopa.bot:reactive-dialogs' */
-export interface ReactiveDialogsCapability {
-  /** register a reactives-dialog flow or table in the engine; it will not be rendered until renderFlow is called */
-  use(
-    /** JSX of dialog flow / table */
-    jsx: ({ }) => FlowElement | TableElement,
-    /** property bag of meta data associated with this flow */
-    meta?: { [key: string]: string }
-  ): void
-  /** render an anonymous reactive-dialog flow or set of directives without pre-registration;
-   * used for directives or other elements that don't have their own unique intents */
-  render(
-    element: Element,
-    context: Iopa.Context,
-    next: () => Promise<void>
-  ): Promise<void>
-  /** render (perform) a specific dialog and/or dialog step */
-  renderFlow(
-    /** id of flow to perform ; use undefined for current flow if there is one executing */
-    flowId: string | undefined | null,
-    /** id of dialog step to perform; use undefined for first dialog step in flow */
-    dialogId: string | undefined | null,
-    /* Context of current iopa record being executed */
-    context: Iopa.Context,
-    /* Iopa pipeline next, called by dialog flow handler if cannot handle this request */
-    next: () => Promise<void>
-  ): Promise<void>
-  /** end the current flow if there is one being executed */
-  end(context: Iopa.Context): Promise<void>
-  /** map of command name and associated handlers; returns disposer to remove handler */
-  registerCommand(command: string, handler: CommandHandler): () => void
-  /** Version of this capability */
-  'iopa.Version': string
-  /** meta data for all currently registered flows */
-  meta: { [key: string]: { [key: string]: string } }
-  /** All currently registered lists */
-  lists: { [key: string]: string[] }
-  /** Meta data for all currently registered tables */
-  tables: { [key: string]: { [key: string]: string | string[] } }
-  /** property function that adds scheme for local resources e.g,, app:// */
-  localResourceProtocolMapper: (partial_url: string) => string
-}
-
-interface ReactiveDialogsCapabilityPrivate extends ReactiveDialogsCapability {
+interface ReactiveDialogsCapabilityPrivate extends IReactiveDialogsCapability {
   /** map of command name and associated handlers, push to this array to register additional platform commands */
   _commandHandlers: Map<string, CommandHandler>
-   /** local version of ReactiveDialogsCapability.localResourceProtocolMapper */
-  _localResourceProtocolMapper: (partial_url: string) => string
+  /** local version of ReactiveDialogsCapability.localResourceProtocolMapper */
+  _localResourceProtocolMapper: (partialUrl: string) => string
 }
 
-export interface SessionCurrentDialog {
-  /* current step id */
-  id: string
-  /** version of the IOPA dialogs manager */
-  iopaBotVersion: '2.0'
-  /** sequence number of the directive last executed in the current dialog step */
-  lastDirective: number | null
-  /** id of step rendered before this one (for return logic) */
-  previousId: string
-  /** last set of actions prompted to participant */
-  lastPromptActions: ActionElement[] | null
+export function useReactiveDialogs(context: IopaBotContext) {
+  return context.capability('urn:io.iopa.bot:reactive-dialogs')
 }
 
-/** Reactive Dialogs Session passed to every context record */
-export interface ReactiveDialogsSession {
-  /** id of the dialog step being executed in the current skill */
-  'bot:CurrentDialog': SessionCurrentDialog | null
-  /** timestamp that the last dialog step ended */
-  'bot:LastDialogEndedDate': number | null
-  /** Flag indicating whether this intent is the first for this session */
-  'bot:NewSession': boolean
-  /** id of the current executing bot session */
-  'bot:Skill': string
-  /** V2 semversion of the current executing bot session;  checked in case flow definition upgraded mid conversation */
-  'bot:SkillVersion': string
-  /** Skill data for current request */
-  'bot:Slots': string
-  /** property bag of all data collected in current skill session, including silent properties specifed on card actions */
-  'bot:Variables': any
-}
-
-export const useReactiveDialogs = (context: Iopa.Context) => {
-  return context[SERVER.Capabilities][
-    BOT.CAPABILITIES.ReactiveDialogs
-  ] as ReactiveDialogsCapability
-}
-
-export const useBotSession = (context: Iopa.Context) =>
+export const useBotSession = (context: IopaBotContext) =>
   [
     context[BOT.Session] as ReactiveDialogsSession,
     newState => {
-      context[BOT.Session] = newState
-        ? Object.assign(context[BOT.Session], newState)
-        : { id: context[BOT.Session]['id'] }
-
-      return context[SERVER.Capabilities][BOT.CAPABILITIES.Session].put(
-        context[BOT.Session]
+      context.set(
+        'bot.Session',
+        newState
+          ? Object.assign(context[BOT.Session], newState)
+          : { id: context[BOT.Session].id }
       )
+
+      return context
+        .capability('urn:io.iopa.bot:session')
+        .put(context[BOT.Session])
     }
   ] as [ReactiveDialogsSession, (newState) => Promise<void>]
 
@@ -141,24 +76,39 @@ const RDM_VERSION = '2.0'
  */
 export default class ReactiveDialogManager {
   app: any
+
   private flows: { [key: string]: FlowElement } = {}
+
   private flowsMeta: { [key: string]: { [key: string]: string } } = {}
+
   private tableLists: { [key: string]: string[] } = {}
-  private tableMeta: { [key: string]: { [key: string]: string | string[] } } = {}
+
+  private tableMeta: {
+    [key: string]: { [key: string]: string | string[] }
+  } = {}
+
   private launchIntentsToFlows: { [key: string]: string } = {}
 
   private commandHandlers: Map<string, CommandHandler>
-  private _localResourceProtocolMapper: (partial_url: string) => string = (partial_url) => partial_url || ''
+
+  private _localResourceProtocolMapper: (
+    partialUrl: string
+  ) => string = partialUrl => partialUrl || ''
 
   /** public IOPA constructor used to register this capability */
   constructor(app) {
     this.app = app
 
-    app.properties[SERVER.CancelTokenSource] =
-      app.properties[SERVER.CancelTokenSource] ||
-      new Iopa.util.CancellationTokenSource()
-    app.properties[SERVER.CancelToken] =
-      app.properties[SERVER.CancelTokenSource].token
+    app.properties.set(
+      'server.CancelTokenSouce',
+      app.properties.get('server.CancelTokenSouce') ||
+        new util.CancellationTokenSource()
+    )
+
+    app.properties.set(
+      'server.CancelToken',
+      app.properties.get('server.CancelTokenSouce').token
+    )
 
     this.commandHandlers = new Map<string, CommandHandler>()
 
@@ -166,16 +116,16 @@ export default class ReactiveDialogManager {
     // set up useReactiveDialogs() public capability handle
     //
 
-    app.properties[SERVER.Capabilities][BOT.CAPABILITIES.ReactiveDialogs] = {
+    app.setCapability('urn:io.iopa.bot:reactive-dialogs', {
       'iopa.Version': BOT.VERSION,
 
-      use: (jsx: ({ }) => FlowElement, meta?: { [key: string]: string }) => {
+      use: (jsx: (value) => FlowElement, meta?: { [key: string]: string }) => {
         this.register(app, jsx, meta)
       },
 
       render: (
         element: Element,
-        context: Iopa.Context,
+        context: IopaBotContext,
         next: () => Promise<void>
       ) => {
         return this.render(element, context, next)
@@ -184,13 +134,13 @@ export default class ReactiveDialogManager {
       renderFlow: (
         id: string,
         stepId: string | undefined,
-        context: Iopa.Context,
+        context: IopaBotContext,
         next: () => Promise<void>
       ) => {
         return this.renderFlowById(id, stepId, context, next)
       },
 
-      end: async (context: Iopa.Context) => {
+      end: async (context: IopaBotContext) => {
         return this.endFlow(context, { reason: 'capability.end' })
       },
 
@@ -209,7 +159,7 @@ export default class ReactiveDialogManager {
 
       tables: this.tableMeta,
 
-      set localResourceProtocolMapper(mapper: (partial_url: string) => string) {
+      set localResourceProtocolMapper(mapper: (partialUrl: string) => string) {
         this._localResourceProtocolMapper = mapper
         ReactiveCards.setLocalResourceProtocolMapper(mapper)
       },
@@ -217,15 +167,11 @@ export default class ReactiveDialogManager {
       get localResourceProtocolMapper() {
         return this._localResourceProtocolMapper
       }
+    } as ReactiveDialogsCapabilityPrivate)
 
-    } as ReactiveDialogsCapabilityPrivate
-
-    app.reactivedialogs =
-      app.properties[SERVER.Capabilities][BOT.CAPABILITIES.ReactiveDialogs]
-
-    app.properties[SERVER.Capabilities][BOT.CAPABILITIES.ReactiveDialogs][
-      IOPA.Version
-    ] = BOT.VERSION
+    this.app.reactivedialogs = app.capability(
+      'urn:io.iopa.bot:reactive-dialogs'
+    )
 
     //
     // Register well-known intent and default command handlers
@@ -239,16 +185,16 @@ export default class ReactiveDialogManager {
         },
         utterances: ['/dialog {-|FlowId}']
       },
-      async (context, next) => {
-        context.response.responseHandled = true
-        const flowId = context[BOT.Slots]['FlowId']
+      async (context: IopaBotContext, next: () => Promise<void>) => {
+        context.response.set('responseHandled', true)
+        const flowId = context[BOT.Slots].FlowId
         return this.renderFlowById(flowId, null, context, next)
       }
     )
 
     this.commandHandlers.set(
       'end',
-      async (_command, _props, context: Iopa.Context) => {
+      async (_command, _props, context: IopaBotContext) => {
         this.endFlow(context, { reason: 'command:end' })
         return false
       }
@@ -256,7 +202,7 @@ export default class ReactiveDialogManager {
 
     this.commandHandlers.set(
       'pause',
-      async (_command, props, context: Iopa.Context) => {
+      async (_command, props, context: IopaBotContext) => {
         await delay(context, props.delay || defaultPauseInterval)
         return true
       }
@@ -264,7 +210,7 @@ export default class ReactiveDialogManager {
 
     this.commandHandlers.set(
       'return',
-      async (_command, props, context: Iopa.Context) => {
+      async (_command, props, context: IopaBotContext) => {
         const botSession = useBotSession(context)[0]
 
         const prevDialog = botSession[BOT.CurrentDialog] as SessionCurrentDialog
@@ -288,7 +234,7 @@ export default class ReactiveDialogManager {
    * record;
    */
   public invoke(
-    context: Iopa.Context,
+    context: IopaBotContext,
     next: () => Promise<void>
   ): Promise<void> {
     const flows = useReactiveDialogs(context)
@@ -302,9 +248,8 @@ export default class ReactiveDialogManager {
       let dialogId: string = null!
 
       if (flowId.indexOf('#') >= 0) {
-        let split = flowId.split('#', 2)
-        flowId = split[0]
-        dialogId = split[1]
+        const split = flowId.split('#', 2)
+        ;[flowId, dialogId] = split
       }
 
       return flows.renderFlow(flowId, dialogId, context, next)
@@ -320,26 +265,32 @@ export default class ReactiveDialogManager {
 
     const botSession = useBotSession(context)[0]
 
-    var isV2Dialog = !!botSession[BOT.SkillVersion]
-    if (!isV2Dialog) return next()
+    const isV2Dialog = !!botSession[BOT.SkillVersion]
+    if (!isV2Dialog) {
+      return next()
+    }
 
     console.log('>> skill', botSession[BOT.Skill])
     console.log('>> intent', context[BOT.Intent])
-    console.log('>> dialog', botSession[BOT.CurrentDialog] ? botSession[BOT.CurrentDialog].id : "")
+    console.log(
+      '>> dialog',
+      botSession[BOT.CurrentDialog] ? botSession[BOT.CurrentDialog].id : ''
+    )
 
     //
     // Check if we are checking for a new session or continuing an existing session
     //
     if (!botSession[BOT.CurrentDialog]) {
       return this._matchBeginFlow(context, next)
-    } else {
-      return this._continueFlow(context, next) as Promise<void>
     }
-
+    return this._continueFlow(context, next) as Promise<void>
   }
 
   /** Check if we can process the intent and therefore start this dialog */
-  private _matchBeginFlow(context, next): Promise<void> {
+  private _matchBeginFlow(
+    context: IopaBotContext,
+    next: () => Promise<void>
+  ): Promise<void> {
     const reactive = useReactiveDialogs(context)
 
     const intent = context[BOT.Intent]
@@ -355,13 +306,12 @@ export default class ReactiveDialogManager {
     return reactive.renderFlow(flowId, null, context, next)
   }
 
-  private _continueFlow(context: Iopa.Context, next: () => Promise<void>) {
-
+  private _continueFlow(context: IopaBotContext, next: () => Promise<void>) {
     const [botSession, setBotSession] = useBotSession(context)
     const intent: string = context[BOT.Intent]
 
-    var flowId = botSession[BOT.Skill]
-    var flow = this.flows[flowId]
+    const flowId = botSession[BOT.Skill]
+    const flow = this.flows[flowId]
 
     if (!flow) {
       // not a recognized flow so clear
@@ -388,14 +338,14 @@ export default class ReactiveDialogManager {
     if (
       botSession[BOT.SkillVersion] &&
       flow.props.version.split('.')[0] !==
-      botSession[BOT.SkillVersion].split('.')[0]
+        botSession[BOT.SkillVersion].split('.')[0]
     ) {
       // major version change so clear
       console.log(
         `Dialog Flow ${flowId} major version ${
-        flow.props.version
+          flow.props.version
         } updated while participant was mid session on version ${
-        botSession[BOT.SkillVersion]
+          botSession[BOT.SkillVersion]
         }`
       )
 
@@ -406,9 +356,9 @@ export default class ReactiveDialogManager {
             id: botSession[BOT.Skill],
             reason: `Dialog Flow ${flowId} major version ${
               flow.props.version
-              } updated while participant was mid session on version ${
+            } updated while participant was mid session on version ${
               botSession[BOT.SkillVersion]
-              }`
+            }`
           },
           context
         )
@@ -430,10 +380,11 @@ export default class ReactiveDialogManager {
     }
 
     const dialogSeqNo = flow.props.children.findIndex(
-      directive => directive.type == 'dialog' && directive.props.id == dialogId
+      directive =>
+        directive.type === 'dialog' && directive.props.id === dialogId
     )
 
-    if (dialogSeqNo == -1) {
+    if (dialogSeqNo === -1) {
       //
       // not a recognized dialog step so clear
       //
@@ -462,11 +413,11 @@ export default class ReactiveDialogManager {
         [`${dialogId}${lastDirective ? `:${lastDirective}` : ''}`]: intent,
         [`${dialogId}${
           lastDirective ? `:${lastDirective}:raw` : ':raw'
-          }`]: context[BOT.Text]
+        }`]: context[BOT.Text]
       }
     })
 
-    if (dialogSeqNo == flow.props.children.length - 1) {
+    if (dialogSeqNo === flow.props.children.length - 1) {
       // TO DO POST READING OF END FLOW WITH ALL PROPERTIES
 
       //
@@ -507,77 +458,76 @@ export default class ReactiveDialogManager {
         dialogSeqNo,
         lastDirective
       )
-    } else {
-      ///
-      /// match intent to actions Element
-      ///
+    }
+    // /
+    // / match intent to actions Element
+    // /
 
-      const intentFilters = lastPromptActions.map(
-        action =>
-          action.props.intents || action.props.utterances || [toString(action)]
-      )
+    const intentFilters = lastPromptActions.map(
+      action =>
+        action.props.intents || action.props.utterances || [toString(action)]
+    )
 
-      const selectedActionSeqNo = intentFilters.findIndex(
-        filters => filters.includes(intent) || filters.includes('*')
-      )
+    const selectedActionSeqNo = intentFilters.findIndex(
+      filters => filters.includes(intent) || filters.includes('*')
+    )
 
-      if (selectedActionSeqNo == -1) {
-        const notUnderstoodDialog = `${dialogId}-not-understood`
-        const notUnderstoodSkill = `not-understood`
+    if (selectedActionSeqNo === -1) {
+      const notUnderstoodDialog = `${dialogId}-not-understood`
+      const notUnderstoodSkill = `not-understood`
 
-        const nextStep: DialogElement | undefined =
-          flow.props.children.find(
-            dialog => dialog.props.id == notUnderstoodDialog
-          ) ||
-          flow.props.children.find(
-            dialog => dialog.props.id == notUnderstoodSkill
-          )
+      const nextStep: DialogElement | undefined =
+        flow.props.children.find(
+          findDialog => findDialog.props.id === notUnderstoodDialog
+        ) ||
+        flow.props.children.find(
+          findDialog => findDialog.props.id === notUnderstoodSkill
+        )
 
-        if (nextStep) {
-          return this.renderDialogStep(flow, nextStep, context)
-        }
-
-        // No matching intent for current flow dialog step, see if we should start another flow
-        return this._matchBeginFlow(context, next)
+      if (nextStep) {
+        return this.renderDialogStep(flow, nextStep, context)
       }
 
-      const action = lastPromptActions[selectedActionSeqNo]
+      // No matching intent for current flow dialog step, see if we should start another flow
+      return this._matchBeginFlow(context, next)
+    }
 
-      if (action.props.url) {
-        action.props.type = 'openurl'
-      }
+    const action = lastPromptActions[selectedActionSeqNo]
 
-      switch (action.props.type) {
-        case 'submit':
-          return this.proceedToNextDirective(
-            context,
-            flow,
-            dialog,
-            dialogSeqNo,
-            lastDirective
-          )
+    if (action.props.url) {
+      action.props.type = 'openurl'
+    }
 
-        case 'openurl':
-          return this.renderActionOpenUrl(action as ActionOpenUrlElement, context)
+    switch (action.props.type) {
+      case 'submit':
+        return this.proceedToNextDirective(
+          context,
+          flow,
+          dialog,
+          dialogSeqNo,
+          lastDirective
+        )
 
-        default:
-          console.log(
-            `card type ${action.props.type} not yet supported in reactive-dialogs manager`
-          )
+      case 'openurl':
+        return this.renderActionOpenUrl(action as ActionOpenUrlElement, context)
 
-          return this.proceedToNextDirective(
-            context,
-            flow,
-            dialog,
-            dialogSeqNo,
-            lastDirective
-          )
-      }
+      default:
+        console.log(
+          `card type ${action.props.type} not yet supported in reactive-dialogs manager`
+        )
+
+        return this.proceedToNextDirective(
+          context,
+          flow,
+          dialog,
+          dialogSeqNo,
+          lastDirective
+        )
     }
   }
 
   protected proceedToNextDirective(
-    context: Iopa.Context,
+    context: IopaBotContext,
     flow: FlowElement,
     dialog: DialogElement,
     dialogSeqNo: number,
@@ -592,55 +542,56 @@ export default class ReactiveDialogManager {
       // no op as we got a participant response while we were still handling directives for this step
       //
       return Promise.resolve()
-    } else if (dialogSeqNo < flow.props.children.length - 1) {
+    }
+    if (dialogSeqNo < flow.props.children.length - 1) {
       //
       // end of directives in current dialog step, but not at end of flow
       //
       const nextStep = flow.props.children[dialogSeqNo + 1]
 
       return this.renderDialogStep(flow, nextStep, context)
-    } else {
-      //
-      // at end of flow
-      //
-
-      return this.endFlow(context, { reason: 'last-directive' })
     }
+    //
+    // at end of flow
+    //
+
+    return this.endFlow(context, { reason: 'last-directive' })
   }
 
   /** helper method to register a jsx flow or table element in this capability's inventory  */
-  protected register(app: Iopa.App, jsx: ({ }) => FlowElement | TableElement, meta: { [key: string]: string } = {}): void {
-
+  protected register(
+    app: IopaBotApp,
+    jsx: (value: {}) => FlowElement | TableElement,
+    meta: { [key: string]: string } = {}
+  ): void {
     const flow: FlowElement | TableElement = jsx({})
 
     if (!flow) {
       return
     }
 
-    if ((flow.type !== 'flow') && (flow.type !== 'table')) {
-      return throwErr(
+    if (flow.type !== 'flow' && flow.type !== 'table') {
+      throw new Error(
         'Tried to register a flow that is not a reactive-dialogs type'
-      ) as any
+      )
     }
 
-    if (flow.type == 'table') {
-
+    if (flow.type === 'table') {
       //
       // Register Table Lists in main inventory
       //
 
       const tableId = flow.props.id
       const lists = flow.props.children
-      this.tableMeta[tableId] = Object.assign({ lists: [] }, meta)
+      this.tableMeta[tableId] = { lists: [], ...meta }
 
       lists.forEach(list => {
         const listid = list.props.id
         const items = list.props.children
         this.tableLists[listid] = items
-          ; (this.tableMeta[tableId].lists as string[]).push(listid)
+        ;(this.tableMeta[tableId].lists as string[]).push(listid)
 
         console.log(` registered table ${tableId}  list ${list.props.id}`)
-
       })
       return
     }
@@ -652,17 +603,15 @@ export default class ReactiveDialogManager {
     const flowId = flow.props.id
 
     if (flowId in this.flows) {
-      return throwErr(
+      throw new Error(
         `Tried to register a dialog flow with id ${flowId} that already has been registered;  restart engine first`
-      ) as any
+      )
     }
 
     this.flows[flowId] = flow
     this.flowsMeta[flowId] = meta
 
-    const skill = app.properties[SERVER.Capabilities][
-      BOT.CAPABILITIES.Skills
-    ].add(flowId) as Skill
+    const skill = app.capability('urn:io.iopa.bot:skills').add(flowId) as Skill
 
     if (!meta.global) {
       skill.global(false)
@@ -682,11 +631,11 @@ export default class ReactiveDialogManager {
 
     if (flow.props.utterances && flow.props.utterances.length > 0) {
       if (!Array.isArray(flow.props.utterances)) {
-        throwErr('utterances on <flow> must be an array of strings')
+        throw new Error('utterances on <flow> must be an array of strings')
       }
 
-      const skills =
-        app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Skills].skills
+      const { skills } = app.capability('urn:io.iopa.bot:skills')
+
       const launchSkill = flow.props.canLaunchFromGlobal
         ? skills.default
         : skill
@@ -702,7 +651,7 @@ export default class ReactiveDialogManager {
       }
     }
 
-    console.log(`registered dialog flow ${flowId}`);
+    console.log(`registered dialog flow ${flowId}`)
   }
 
   /** helper method to register a single dialog step in this skills inventory  */
@@ -710,10 +659,10 @@ export default class ReactiveDialogManager {
     dialog.props.children
       .filter(
         dialogChild =>
-          dialogChild.type == 'card' || typeof dialogChild.type == 'function'
+          dialogChild.type === 'card' || typeof dialogChild.type === 'function'
       )
       .forEach(dialogChild => {
-        if (dialogChild.type == 'card') {
+        if (dialogChild.type === 'card') {
           this.registerDialogCard(dialogChild as CardElement, skill)
         } else {
           this.registerDialogFuction(
@@ -726,17 +675,15 @@ export default class ReactiveDialogManager {
 
   /** helper method to register a single card in this skills inventory  */
   protected registerDialogFuction(fn: CustomElement, skill: Skill) {
-    const dialogChild = fn.type(
-      Object.assign({}, fn.props, fn.type.defaultProps)
-    )
+    const dialogChild = fn.type({ ...fn.props, ...fn.type.defaultProps })
 
     if (dialogChild == null) {
       return
     }
 
-    if (dialogChild.type == 'card') {
+    if (dialogChild.type === 'card') {
       this.registerDialogCard(dialogChild as CardElement, skill)
-    } else if (typeof dialogChild.type == 'function') {
+    } else if (typeof dialogChild.type === 'function') {
       this.registerDialogFuction((dialogChild as any) as CustomElement, skill)
     }
   }
@@ -744,7 +691,7 @@ export default class ReactiveDialogManager {
   /** helper method to register a single card in this skills inventory  */
   protected registerDialogCard(card: CardElement, skill: Skill) {
     card.props.children
-      .filter(cardChild => cardChild.type == 'actionset')
+      .filter(cardChild => cardChild.type === 'actionset')
       .forEach(actionset => {
         this.registerDialogCardActions(actionset as ActionSetElement, skill)
       })
@@ -758,9 +705,9 @@ export default class ReactiveDialogManager {
     skill: Skill
   ) {
     actionset.props.children
-      .filter(action => action.type == 'action')
+      .filter(action => action.type === 'action')
       .forEach(action => {
-        let response = toString(action).toLowerCase()
+        const response = toString(action).toLowerCase()
         const utterances = action.props.utterances || [response]
         const name = this.registerUtterances(
           utterances[0].replace(/[\W_]+/g, ''),
@@ -794,10 +741,10 @@ export default class ReactiveDialogManager {
   /** helper method to render an anonymous reactive-dialog flow or set of directives without pre-registration; */
   protected render(
     element: Element,
-    context: Iopa.Context,
+    context: IopaBotContext,
     next: () => Promise<void>
   ): Promise<void> {
-    return throwErr(
+    throw new Error(
       'Inline render of unregistered reactive-dialogs elements not yet implemented'
     )
   }
@@ -806,7 +753,7 @@ export default class ReactiveDialogManager {
   protected renderFlowById(
     id: string | null | undefined,
     dialogId: string | null | undefined,
-    context: Iopa.Context,
+    context: IopaBotContext,
     next: () => Promise<void>
   ) {
     const [botSession, setBotSession] = useBotSession(context)
@@ -842,7 +789,7 @@ export default class ReactiveDialogManager {
       return next()
     }
 
-    if (flow.props.children.length == 0) {
+    if (flow.props.children.length === 0) {
       console.log(`Dialog Flow ${flowId} is empty`)
       return Promise.resolve()
     }
@@ -859,28 +806,28 @@ export default class ReactiveDialogManager {
 
       const currentDialogId: string = botSession[BOT.CurrentDialog].id
       const currentSeq = flow.props.children.findIndex(
-        dialog => dialog.props.id == currentDialogId
+        dialog => dialog.props.id === currentDialogId
       )
       if (currentSeq < flow.props.children.length - 1) {
         dialogStep = flow.props.children[currentSeq + 1]
       } else {
+        // eslint-disable-next-line prefer-destructuring
         dialogStep = flow.props.children[0]
       }
     } else if (dialogId) {
-      dialogStep = flow.props.children.find(c => c.props.id === dialogId)!
+      dialogStep = flow.props.children.find(c => c.props.id === dialogId)
       if (!dialogStep) {
-        console.error(
-          `Step ${dialogId} not found on dialog ${flowId};`
-        )
+        console.error(`Step ${dialogId} not found on dialog ${flowId};`)
         return Promise.resolve()
       }
     } else {
+      // eslint-disable-next-line prefer-destructuring
       dialogStep = flow.props.children[0]
     }
 
     if (!botSession[BOT.Skill] || flow.props.id !== botSession[BOT.Skill]) {
       if (this.commandHandlers.has('dialog-start')) {
-        this.commandHandlers.get('dialog-start')!(
+        this.commandHandlers.get('dialog-start')(
           'dialog-start',
           {
             id: flow.props.id,
@@ -905,7 +852,6 @@ export default class ReactiveDialogManager {
     }, 0)
 
     return next()
-
   }
 
   /** render a given react-dialogs dialog step element to the host platform */
@@ -938,7 +884,9 @@ export default class ReactiveDialogManager {
     const isNotWaitingOnPrompt = await asyncForEachIfTrue(
       dialog.props.children,
       async (directive, i) => {
-        if (this.app.properties[SERVER.CancelToken].isCancelled) return false
+        if (this.app.properties.get('server.CancelToken').isCancelled) {
+          return false
+        }
 
         console.log(`Performing dialog step ${dialog.props.id} directive ${i}`)
 
@@ -948,9 +896,12 @@ export default class ReactiveDialogManager {
           [BOT.CurrentDialog]: currentDialog
         })
 
-        const isNotWaitingOnPrompt = await this.renderDirective(directive, context)
+        const isNotWaitingOnPromptInner = await this.renderDirective(
+          directive,
+          context
+        )
 
-        return isNotWaitingOnPrompt
+        return isNotWaitingOnPromptInner
       }
     )
 
@@ -958,28 +909,27 @@ export default class ReactiveDialogManager {
       const isLastItem =
         flow.props.children[flow.props.children.length - 1] === dialog
       if (isLastItem) {
-        return this.endFlow(context, { reason: 'last-response' })
+        await this.endFlow(context, { reason: 'last-response' })
+        return
       }
 
       const currentSeq = flow.props.children.findIndex(
-        d => d.props.id == dialog.props.id
+        d => d.props.id === dialog.props.id
       )
       if (currentSeq !== -1) {
         const nextStep = flow.props.children[currentSeq + 1]
-        return this.renderDialogStep(flow, nextStep, context)
+        await this.renderDialogStep(flow, nextStep, context)
       }
     }
-
-    return
   }
 
   /** end the current flow if there is one being executed */
-  protected endFlow(context: Iopa.Context, props): Promise<void> {
+  protected endFlow(context: IopaBotContext, props): Promise<void> {
     const [botSession, setBotSession] = useBotSession(context)
     console.log(`Ending dialog flow ${botSession[BOT.Skill]}`)
 
     if (this.commandHandlers.has('dialog-end')) {
-      this.commandHandlers.get('dialog-end')!(
+      this.commandHandlers.get('dialog-end')(
         'dialog-end',
         {
           id: botSession[BOT.Skill],
@@ -991,14 +941,13 @@ export default class ReactiveDialogManager {
     }
 
     setBotSession(null)
-    context.response[BOT.ShouldEndSession] = true
+    context.response.set('bot.ShouldEndSession', true)
     return Promise.resolve()
   }
 
-
   protected renderDirective(
     element: TextElement | CardElement | ActionElement | CustomElement,
-    context: Iopa.Context
+    context: IopaBotContext
   ): Promise<boolean> {
     const vdom = render<TextElement | CardElement | ActionElement>(element)
 
@@ -1011,18 +960,17 @@ export default class ReactiveDialogManager {
       case 'action':
         return this.renderAction(vdom, context)
       default:
-        throwErr(
+        throw new Error(
           `invalid dialog flow: <${
-          (element as any).type
+            ((element as unknown) as { type: string }).type
           }> not a valid dialog directive or card type`
         )
-        return Promise.resolve(false)
     }
   }
 
   protected async renderText(
     element: TextElement,
-    context: Iopa.Context
+    context: IopaBotContext
   ): Promise<boolean> {
     const text = toString(element)
     const pause = element.props.pause || defaultPauseInterval
@@ -1035,11 +983,11 @@ export default class ReactiveDialogManager {
 
   protected async renderCard(
     element: CardElement,
-    context: Iopa.Context
+    context: IopaBotContext
   ): Promise<boolean> {
     const [botSession, setBotSession] = useBotSession(context)
     const actionset: ActionSetElement | undefined = element.props.children.find(
-      child => child.type == 'actionset'
+      child => child.type === 'actionset'
     ) as ActionSetElement | undefined
 
     if (actionset) {
@@ -1047,10 +995,11 @@ export default class ReactiveDialogManager {
       // render openurl as submit
       //
       actionset.props.children.forEach(action => {
-        if (action.props.type === 'openurl') {
-          action.props.type = 'submit'
-          action.props.data = action.props.utterances
-            ? action.props.utterances[0]
+        const { props } = action
+        if (props.type === 'openurl') {
+          props.type = 'submit'
+          props.data = props.utterances
+            ? props.utterances[0]
             : toString(action).toLowerCase()
         }
       })
@@ -1060,7 +1009,7 @@ export default class ReactiveDialogManager {
 
     const meta = this.flowsMeta[botSession[BOT.Skill]]
 
-    const resourceRoot = (meta && meta["nkar"]) ? `${meta["nkar"]}/` : ''
+    const resourceRoot = meta && meta.nkar ? `${meta.nkar}/` : ''
 
     const card = ReactiveCards.render(element, resourceRoot)
 
@@ -1070,18 +1019,17 @@ export default class ReactiveDialogManager {
 
     await delay(context, pause || defaultPauseInterval)
 
-    return !card.actions || (card.actions.length == 0)
+    return !card.actions || card.actions.length === 0
   }
-
 
   private saveActionsFromCard(
     element: CardElement,
-    context: Iopa.Context
+    context: IopaBotContext
   ): void {
     const [botSession, setBotSession] = useBotSession(context)
     const currentDialog: SessionCurrentDialog = botSession[BOT.CurrentDialog]!
     const actionset = element.props.children.find(
-      actionset => actionset.type == 'actionset'
+      actionsetfind => actionsetfind.type === 'actionset'
     ) as ActionSetElement | undefined
 
     if (!actionset) {
@@ -1089,7 +1037,7 @@ export default class ReactiveDialogManager {
     }
 
     currentDialog.lastPromptActions = actionset.props.children.filter(
-      action => action.type == 'action'
+      action => action.type === 'action'
     )
 
     setBotSession({ [BOT.CurrentDialog]: currentDialog })
@@ -1097,40 +1045,45 @@ export default class ReactiveDialogManager {
 
   protected renderAction(
     element: ActionElement,
-    context: Iopa.Context
+    context: IopaBotContext
   ): Promise<boolean> {
     switch (element.props.type) {
       case 'openurl':
-        return this.renderActionOpenUrl(element as ActionOpenUrlElement, context)
+        return this.renderActionOpenUrl(
+          element as ActionOpenUrlElement,
+          context
+        )
       case 'showcard':
       case 'submit':
       default:
-        throwErr(
+        throw new Error(
           `Invalid action type '${element.props.type}' when used as a direct child of <step>`
         )
-        return Promise.resolve(true)
     }
   }
 
   protected async renderActionOpenUrl(
     element: ActionOpenUrlElement,
-    context: Iopa.Context
+    context: IopaBotContext
   ): Promise<boolean> {
     if (!element.props.url) {
       // continue with dialog next step
       return this.renderActionDialogFlow('', '', element, context)
     }
 
-    if (element.props.url.indexOf(':') == -1) {
-      element.props.url = `dialog:/` + element.props.url
+    if (element.props.url.indexOf(':') === -1) {
+      element.props.url = `dialog:/${element.props.url}`
     }
 
-    const url = parse_url(element.props.url)
+    const url = parseUrl(element.props.url)
+
+    let flowId: string
+    let dialogId: string
 
     switch (url.protocol) {
       case 'dialog:':
-        const flowId = url.pathname.replace(/^\/*/, '')
-        const dialogId = url.hash ? url.hash.replace(/^#/, '') : undefined
+        flowId = url.pathname.replace(/^\/*/, '')
+        dialogId = url.hash ? url.hash.replace(/^#/, '') : undefined
         if (!url.hash && !flowId) {
           console.log('found blank action url in dialog, continuing')
           return Promise.resolve(true)
@@ -1152,8 +1105,9 @@ export default class ReactiveDialogManager {
           context
         )
       default:
-        throwErr(`unknown protocol ${url.protocol} on ${element.props.url}`)
-        return Promise.resolve(true)
+        throw new Error(
+          `unknown protocol ${url.protocol} on ${element.props.url}`
+        )
     }
   }
 
@@ -1161,7 +1115,7 @@ export default class ReactiveDialogManager {
     id: string,
     dialogId: string | undefined,
     element: ActionOpenUrlElement,
-    context: Iopa.Context
+    context: IopaBotContext
   ): Promise<boolean> {
     const reactive = useReactiveDialogs(
       context
@@ -1172,15 +1126,23 @@ export default class ReactiveDialogManager {
     return false
   }
 
-  protected logStartOfDialog(context: Iopa.Context) { }
-  protected logAbandondedDialog(context: Iopa.Context) { }
-  protected logCompletedDialog(context: Iopa.Context) { }
+  protected logStartOfDialog(_: IopaBotContext) {
+    /** noop */
+  }
+
+  protected logAbandondedDialog(_: IopaBotContext) {
+    /** noop */
+  }
+
+  protected logCompletedDialog(_: IopaBotContext) {
+    /** noop */
+  }
 
   protected renderActionCommand(
     command: string,
     params: { [key: string]: any },
     element: ActionOpenUrlElement,
-    context: Iopa.Context
+    context: IopaBotContext
   ): Promise<boolean> {
     const reactive = useReactiveDialogs(
       context
@@ -1189,18 +1151,18 @@ export default class ReactiveDialogManager {
     if (handler) {
       return handler(
         command,
-        Object.assign(
-          { url: element.props.url, data: element.props.data },
-          params
-        ),
+        {
+          url: element.props.url,
+          data: element.props.data,
+          ...params
+        },
         context
       )
-    } else {
-      throwErr(
-        `No handler registered for the command ${command} on ${element.props.url}`
-      )
-      return Promise.resolve(true)
     }
+    throw new Error(
+      `No handler registered for the command ${command} on ${element.props.url}`
+    )
+    return Promise.resolve(true)
   }
 }
 
@@ -1214,25 +1176,20 @@ const delay = (context, interval) => {
   })
 }
 
-function throwErr(...args): Promise<void> {
-  var message = Array.prototype.slice.call(args).join(' ')
-  throw new Error(message)
-}
-
 function camelize(str) {
   return str
-    .replace(/(?:^\w|[A-Z]|\b\w)/g, function (word, index) {
-      return index == 0 ? word.toLowerCase() : word.toUpperCase()
+    .replace(/(?:^\w|[A-Z]|\b\w)/g, (word, index) => {
+      return index === 0 ? word.toLowerCase() : word.toUpperCase()
     })
     .replace(/\s+/g, '')
 }
 
 export function getJsonFromUrl(url) {
-  var query = url.substr(1);
-  var result = {};
-  query.split("&").forEach(function (part) {
-    var item = part.split("=");
-    result[item[0]] = decodeURIComponent(item[1]);
-  });
-  return result;
+  const query = url.substr(1)
+  const result = {}
+  query.split('&').forEach(part => {
+    const item = part.split('=')
+    result[item[0]] = decodeURIComponent(item[1])
+  })
+  return result
 }

@@ -133,7 +133,10 @@ module.exports = function SkillsContainer(app) {
           }
         ]
       }
-      return context.response.card(card).send().then(next)
+      return context.response
+        .card(card)
+        .send()
+        .then(next)
     },
     ['YesIntent', 'NoIntent'],
     function(context, next) {
@@ -149,7 +152,8 @@ module.exports = function SkillsContainer(app) {
       context.response
         .status(200)
         .say('value = ' + value)
-        .send().then(next)
+        .send()
+        .then(next)
       return context[SERVER.Capabilities][BOT.CAPABILITIES.Dialog].beginDialog(
         'WrapupDialog',
         context,
@@ -246,7 +250,7 @@ An event indicating that the user has invoked the conversational agent, either b
 Access variables on the request as direct keys of the iopa context record
 
 ```js
-var intent = context['bot:Intent']
+var intent = context['bot.Intent']
 ```
 
 ### Response
@@ -279,32 +283,32 @@ A dialog may return a response to the remote participant, do nothing, or launch 
 
 | Required | IOPA Key Name   | Value Description                                                                                                                                   |
 | :------: | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-|   Yes    | "bot:Source"    | The urn of the conversational agent service provider e.g., "urn:io.iopa.bot:slack", "urn:io.iopa.bot:alexa"                                         |
-|   Yes    | "bot:Intent"    | The intent of the message (usually derived in middleware by parsing audio or free form text, but may be provided by service provider such as Alexa) |
-|    No    | "bot:Text"      | The original source message as entered by the user                                                                                                  |
-|    No    | "bot:MessageId" | The unique identifier for this particular context record                                                                                            |
+|   Yes    | 'bot.Source'    | The urn of the conversational agent service provider e.g., "urn:io.iopa.bot:slack", "urn:io.iopa.bot:alexa"                                         |
+|   Yes    | 'bot.Intent'    | The intent of the message (usually derived in middleware by parsing audio or free form text, but may be provided by service provider such as Alexa) |
+|    No    | 'bot.Text'      | The original source message as entered by the user                                                                                                  |
+|    No    | 'bot.MessageId' | The unique identifier for this particular context record                                                                                            |
 |   Yes    | bot:Timestamp"  | The timestamp (in milliseconds since epoch) of the message                                                                                          |
-|   Yes    | "bot:Session"   | A read/write property dictionary of session data that is persisted for the entire session (even across host execution servers/regions)              |
-|    No    | "bot:Slots"     | The variables values in the input message that correspond to the variable keys for this intent/utterance                                            |
-|    No    | "bot:Variables" | The variables keys that correspond to the variable values provided in the input message                                                             |
+|   Yes    | 'bot.Session'   | A read/write property dictionary of session data that is persisted for the entire session (even across host execution servers/regions)              |
+|    No    | 'bot.Slots'     | The variables values in the input message that correspond to the variable keys for this intent/utterance                                            |
+|    No    | 'bot.Variables' | The variables keys that correspond to the variable values provided in the input message                                                             |
 
 #### Request bot.Address Sub fields
 
 | Required | IOPA Key Name      | Value Description                                                                                                            |
 | :------: | ------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
-|   Yes    | "bot:User"         | The unique id of the user (within the domain of this source)                                                                 |
-|   Yes    | "bot:Bot"          | The unique id of the bot (within the domain of this sourcee)                                                                 |
+|   Yes    | 'bot.User'         | The unique id of the user (within the domain of this source)                                                                 |
+|   Yes    | 'bot.Bot'          | The unique id of the bot (within the domain of this sourcee)                                                                 |
 |    No    | "bot.Conversation" | The conversation identifier                                                                                                  |
 |   Yes    | "bot.Session"      | The unique identifier for this session (not necessarily unique across time, but unique for a given exchange at a given time) |
-|    No    | "bot:OrgUnit"      | The team or organizational identifier (e.g., Slack team)                                                                     |
+|    No    | 'bot.OrgUnit'      | The team or organizational identifier (e.g., Slack team)                                                                     |
 
 ### Session bot.Session Sub fields
 
 | Required | IOPA Key Name       | Value Description                                                                                                      |
 | :------: | ------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-|   Yes    | "bot:Skill"         | The name of the skill that is currently being invoked for this session (used internally by dialog manager, but public) |
-|   Yes    | "bot:NewSession"    | The associated request is the first one for this session                                                               |
-|    No    | "bot:CurrentDialog" | The name and step of the current dialog being executed (used internally by dialog manager)                             |
+|   Yes    | 'bot.Skill'         | The name of the skill that is currently being invoked for this session (used internally by dialog manager, but public) |
+|   Yes    | 'bot.NewSession'    | The associated request is the first one for this session                                                               |
+|    No    | 'bot.CurrentDialog' | The name and step of the current dialog being executed (used internally by dialog manager)                             |
 
 ### Response functions
 
@@ -313,10 +317,10 @@ A dialog may return a response to the remote participant, do nothing, or launch 
 |   Yes    | say                    | `void func(text)` Reply to the user with the given text; calling successively before Send will append multiple lines        |
 |   Yes    | card                   | `void func(object)` Reply to the user with the given card which can include text, images, buttons etc.                      |
 |   Yes    | show                   | `void func(object)` Show on the secondary modality (or display) the given card which can include text, images, buttons etc. |
-|   Yes    | "bot:Reprompt"         | `void func(text)` Store the text with which to reprompt the user in case of error/timeout                                   |
-|   Yes    | "bot:ShouldEndSession" | `void func(boolean)` Indicate that on completion of this exchange the session should be closed and disposed                 |
-|   Yes    | "bot:Send"             | `void func()` Display/send the text and/or cards queued up by the above functions                                           |
-|   Yes    | "bot:Fail"             | `void func(err)` Display/send the error message as the body of the response instead of the text/card already queued up      |
+|   Yes    | 'bot.Reprompt'         | `void func(text)` Store the text with which to reprompt the user in case of error/timeout                                   |
+|   Yes    | 'bot.ShouldEndSession' | `void func(boolean)` Indicate that on completion of this exchange the session should be closed and disposed                 |
+|   Yes    | 'bot.Send'             | `void func()` Display/send the text and/or cards queued up by the above functions                                           |
+|   Yes    | 'bot.Fail'             | `void func(err)` Display/send the error message as the body of the response instead of the text/card already queued up      |
 |   Yes    | status                 | `void func(int)` Set the status code (e.g., 200 for OK, 500 for server error)                                               |
 
 ## Roadmap

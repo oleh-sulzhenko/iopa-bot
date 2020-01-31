@@ -1,12 +1,14 @@
 /** @jsx ReactiveDialogs.h */
 
-import iopaBotFramework, { BOT, AppBotExtensions } from '../src/index'
+import { AppBotExtensions } from 'iopa-types'
 import * as iopa from 'iopa'
 import iopaBotConnectorConsole, { AppConsoleExtensions } from 'iopa-bot-console'
 
 import * as ReactiveDialogs from 'reactive-dialogs'
-import { RDXCard, RDXImageCard } from 'reactive-dialogs'
 
+import iopaBotFramework, { BOT } from '../src/index'
+
+const { RDXCard, RDXImageCard } = ReactiveDialogs
 interface App extends iopa.App, AppBotExtensions, AppConsoleExtensions {}
 
 const app = (new iopa.App() as any) as App
@@ -16,7 +18,7 @@ app.use(iopaBotFramework)
 
 const TestDialog = props => {
   return (
-    <flow id="test" canLaunchFromGlobal={true} utterances={['halt']} {...props}>
+    <flow id="test" canLaunchFromGlobal utterances={['halt']} {...props}>
       <dialog title="introduction" id="introduction">
         <RDXCard
           title={`Are you in a ${'pla' + 'ce'} and where you can go exercise?`}
@@ -72,7 +74,7 @@ app.intent('helloIntent', { utterances: ['hi', 'hello', 'hey'] }, function(
 
 app.dialog('/unknown', '*', function(context, next) {
   context.response
-    .say("I don't know what you mean by " + context[BOT.Text])
+    .say(`I don't know what you mean by ${context[BOT.Text]}`)
     .send()
   return Promise.resolve()
 })

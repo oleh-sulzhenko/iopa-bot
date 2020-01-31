@@ -1,6 +1,6 @@
 /*
  * Iopa Bot Framework
- * Copyright (c) 2016-2019 Internet of Protocols Alliance
+ * Copyright (c) 2016-2020 Internet of Protocols Alliance
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,151 +15,128 @@
  * limitations under the License.
  */
 
-import * as Iopa from 'iopa'
-const { IOPA, SERVER } = Iopa.constants
+import {
+  Component,
+  ISimpleDatabase,
+  IopaBotApp,
+  IopaBotSession,
+  BotSessionBase,
+  ISessionCapability,
+  IopaBotContext
+} from 'iopa-types'
+import { IopaMap } from 'iopa'
 import { BOT } from '../constants'
 
-interface Db {
-  get<T>(path: string): Promise<T | null>
-  put<T>(path: string, item: T): Promise<void>
-  delete(path: string): Promise<void>
-}
+export default class SessionMiddleware implements Component {
+  app: IopaBotApp
 
-export interface Session {
-  id: string
-  updated: number
-  [key: string]: any
-}
+  db: ISimpleDatabase
 
-export interface SessionDbCapability {
-  /** return item from session storage */
-  get(id: string, timeout: number): Promise<Session>
-
-  /** put item into session storage */
-  put(session: Partial<Session> & { id: string })
-
-  /** delete item from session storage */
-  delete(id: string)
-
-  /** stop dialog manager and dispose resources */
-  dispose()
-}
-
-export default class SessionMiddleware implements Iopa.Component {
-  app: Iopa.App | null
-  db: Db | null
-
-  constructor(app: Iopa.App) {
+  constructor(app: IopaBotApp) {
     if (
-      !app.properties[SERVER.Capabilities]['urn:io.iopa.database:session'] &&
-      !app.properties[SERVER.Capabilities]['urn:io.iopa.database']
-    )
+      !app.capability('urn:io.iopa.database:session') &&
+      !app.capability('urn:io.iopa.database')
+    ) {
       throw new Error('Session Middleware requires database middleware')
+    }
 
     this.app = app
 
-    var db =
-      app.properties[SERVER.Capabilities]['urn:io.iopa.database:session'] ||
-      app.properties[SERVER.Capabilities]['urn:io.iopa.database']
-    this.db = db
+    this.db =
+      app.capability('urn:io.iopa.database:session') ||
+      app.capability('urn:io.iopa.database')
 
-    app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Session] = {
+    app.setCapability('urn:io.iopa.bot:session', {
+      'iopa.Version': BOT.VERSION,
       /** return item from session storage */
       get: async (id: string, timeout: number) => {
         if (!this.app) {
-          return undefined
+          throw new Error('Missing App')
         }
 
-        var dbpath = 'sessions/' + id
+        const dbpath = `sessions/${id}`
 
-        let session: Session = await db.get(dbpath)
+        let sessionBase: Partial<BotSessionBase> = await this.db.get(dbpath)
 
-        if (!session) {
-          session = {
-            id: id,
-            updated: new Date().getTime()
+        if (!sessionBase) {
+          sessionBase = {
+            id,
+            updated: Date.now()
           }
-          db.put(dbpath, session)
-          return session
-        } else {
-          session.id = id
+          await this.db.put(dbpath, sessionBase)
+          return new IopaMap(sessionBase) as IopaBotSession
         }
+        sessionBase.id = id
 
         if (timeout && timeout > 0) {
-          var updated = new Date(session.updated)
-          var expiration = new Date(new Date().getTime() - timeout)
+          const { updated } = sessionBase
+          const expiration = Date.now() - timeout
 
           if (updated < expiration) {
-            session = {
-              id: id,
-              updated: updated.getTime()
+            sessionBase = {
+              id,
+              updated
             }
-            db.put(dbpath, session)
+            await this.db.put(dbpath, sessionBase)
           }
         }
 
-        return session
+        return new IopaMap(sessionBase) as IopaBotSession
       },
 
       /** put item into session storage */
-      put: (session: Session) => {
+      put: async (session: IopaBotSession) => {
         if (!this.app) {
           return undefined
         }
 
-        var dbpath = 'sessions/' + session.id
-        session.updated = new Date().getTime()
-        db.put(dbpath, session)
+        const dbpath = `sessions/${session.id}`
+        session.updated = Date.now()
+        await this.db.put(dbpath, session)
         return Promise.resolve(undefined)
       },
 
       /** delete item from session storage */
-      delete: (id: string) => {
+      delete: async (id: string) => {
         if (!this.app) {
-          return undefined
+          return
         }
 
-        var dbpath = 'sessions/' + id
-        return db.delete(dbpath)
+        const dbpath = `sessions/${id}`
+        await this.db.delete(dbpath)
       },
 
       dispose: () => {
         this.app = null
         this.db = null
       }
-    } as SessionDbCapability
-
-    app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Session][
-      IOPA.Version
-    ] = BOT.VERSION
+    } as ISessionCapability)
   }
 
-  async invoke(context, next) {
-    if (!this.app) return Promise.resolve()
+  async invoke(context: IopaBotContext, next): Promise<void> {
+    if (!this.app) {
+      return
+    }
 
-    const sessiondb = this.app.properties[SERVER.Capabilities][
-      BOT.CAPABILITIES.Session
-    ]
+    const sessiondb = this.app.capability('urn:io.iopa.bot:session')
 
     if (
-      !context[BOT.Session] &&
-      context[BOT.Address] &&
-      context[BOT.Address][BOT.User]
+      !context.get('bot.Session') &&
+      context.get('bot.Address') &&
+      context.get('bot.Address')['bot.User']
     ) {
       const session = await sessiondb.get(context[BOT.Address][BOT.User])
 
-      context[BOT.Session] = session
+      context.set('bot.Session', session)
     }
-
     await next()
-
     if (
-      context.response[BOT.ShouldEndSession] ||
-      Object.keys(context[BOT.Session]).length == 1
+      context.response.get('bot.ShouldEndSession') ||
+      Object.keys(context.get('bot.Session')).length === 1
     ) {
-      await sessiondb['delete'](context[BOT.Session].id)
+      await sessiondb.delete(context.get('bot.Session').id)
     } else {
-      await sessiondb.put(context[BOT.Session])
+      await sessiondb.put(context.get('bot.Session'))
     }
   }
 }

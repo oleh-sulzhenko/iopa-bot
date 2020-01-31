@@ -1,3 +1,4 @@
+/* eslint-disable prefer-destructuring */
 /*
 Copyright (c) 2015, Andreas F. Hoffmann
 Portions copyright (c) 2019 The Internet of Protocols Alliance (IOPA) Contributors
@@ -15,50 +16,52 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” 
 */
 
 interface URL {
-    protocol: string,
-    hostname: string,
-    port: string | number,
-    pathname: string,
-    query: string,
-    hash: string
+  protocol: string
+  hostname: string
+  port: string | number
+  pathname: string
+  query: string
+  hash: string
 }
 
-export function parse_url(url): URL  {
-  var match = url.match(/^(http|https|ftp|dialog|command|)?(?:[\:\/]*)([a-z0-9\.-]*)(?:\:([0-9]+))?(\/[^?#]*)?(?:\?([^#]*))?(?:#(.*))?$/i);
-  var ret  = new Object() as URL
+export default function parseUrl(url): URL {
+  const match = url.match(
+    /^(http|https|ftp|dialog|command|)?(?:[:/]*)([a-z0-9.-]*)(?::([0-9]+))?(\/[^?#]*)?(?:\?([^#]*))?(?:#(.*))?$/i
+  )
+  const ret = {} as URL
 
-  ret['protocol'] = '';
-  ret['hostname']     = match[2];
-  ret['port']     = '';
-  ret['pathname']     = '';
-  ret['query']    = '';
-  ret['hash']     = '';
- 
-  if(match[1]){
-      // include the final ':' to match web standard https://developer.mozilla.org/en-US/docs/Web/API/URL/protocol
-      ret['protocol'] = `${match[1]}:`;
+  ret.protocol = ''
+  ret.hostname = match[2]
+  ret.port = ''
+  ret.pathname = ''
+  ret.query = ''
+  ret.hash = ''
+
+  if (match[1]) {
+    // include the final ':' to match web standard https://developer.mozilla.org/en-US/docs/Web/API/URL/protocol
+    ret.protocol = `${match[1]}:`
   }
 
-  if(match[3]){
-      ret['port']     = match[3];
+  if (match[3]) {
+    ret.port = match[3]
   }
 
-  if(match[4]){
-      ret['pathname']     = match[4];
+  if (match[4]) {
+    ret.pathname = match[4]
   } else if (match[2]) {
-    ret['hostname']     = undefined;
-    ret['pathname']     = match[2];
+    ret.hostname = undefined
+    ret.pathname = match[2]
   }
 
-  if(match[5]){
-      // include the leading '?' to match web standard https://developer.mozilla.org/en-US/docs/Web/API/URL/protocol
-      ret['query']    = `?${match[5]}`;
+  if (match[5]) {
+    // include the leading '?' to match web standard https://developer.mozilla.org/en-US/docs/Web/API/URL/protocol
+    ret.query = `?${match[5]}`
   }
 
-  if(match[6]){
-      // include the leading '#' to match web standard https://developer.mozilla.org/en-US/docs/Web/API/URL/protocol
-      ret['hash']     = `#${match[6]}`;
+  if (match[6]) {
+    // include the leading '#' to match web standard https://developer.mozilla.org/en-US/docs/Web/API/URL/protocol
+    ret.hash = `#${match[6]}`
   }
 
-  return ret;
+  return ret
 }

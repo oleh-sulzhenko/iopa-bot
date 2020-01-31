@@ -1,6 +1,6 @@
 /*
  * Iopa Bot Framework
- * Copyright (c) 2016-2019 Internet of Protocols Alliance
+ * Copyright (c) 2016-2020 Internet of Protocols Alliance
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +15,21 @@
  * limitations under the License.
  */
 
-import * as Iopa from 'iopa'
-const { IOPA, SERVER } = Iopa.constants
+import {
+  FC,
+  IopaBotContext,
+  BotDialog,
+  BotDialogStep,
+  IopaBotApp,
+  BotSessionDialogLegacy
+} from 'iopa-types'
+
 import { BOT } from '../constants'
 
-export interface DialogCapability {
-  dialogs: { [key: string]: Dialog }
-  beginDialog(
-    name: string,
-    context: Iopa.Context,
-    next: () => Promise<void>
-  ): Promise<void>
-}
-
-class Dialog {
+class Dialog implements BotDialog {
   public name: string
-  public steps: DialogStep[]
+
+  public steps: BotDialogStep[]
 
   constructor(name, steps) {
     this.name = name
@@ -38,16 +37,17 @@ class Dialog {
   }
 }
 
-type DialogStep = string[] | Iopa.FC
+type DialogStep = string[] | FC
 
 export default class DialogManager {
-  app: any
+  app: IopaBotApp
+
   dialogs: { [key: string]: Dialog } = {}
 
-  constructor(app) {
+  constructor(app: IopaBotApp) {
     this.app = app
 
-    app.dialog = (name, ...args) => {
+    this.app.dialog = (name, ...args) => {
       if (!(typeof name === 'string')) {
         throw new Error(
           'dialog must start with dialog name, then array of intents, then function to call'
@@ -57,11 +57,12 @@ export default class DialogManager {
       this.dialogs[name] = new Dialog(name, args)
     }
 
-    app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Dialog] = {
+    app.setCapability('urn:io.iopa.bot:dialog', {
+      'iopa.Version': BOT.VERSION,
       dialogs: this.dialogs,
       beginDialog: (
         name: string,
-        context: Iopa.Context,
+        context: IopaBotContext,
         next: () => Promise<void>
       ) => {
         const dialog = this.dialogs[name]
@@ -71,108 +72,123 @@ export default class DialogManager {
           return next()
         }
 
-        let dialogFunc = dialog.steps[0] as Iopa.FC
+        let dialogFunc = dialog.steps[0] as FC
 
-        if (typeof dialogFunc != 'function') {
-          dialogFunc = dialog.steps[1] as Iopa.FC
-          context[BOT.Session][BOT.CurrentDialog] = {
+        if (typeof dialogFunc !== 'function') {
+          dialogFunc = dialog.steps[1] as FC
+          context.get('bot.Session').set('bot.CurrentDialog', {
             name: dialog.name,
             step: 2,
             totalSteps: dialog.steps.length
-          }
+          })
         } else {
-          context[BOT.Session][BOT.CurrentDialog] = {
+          context.get('bot.Session').set('bot.CurrentDialog', {
             name: dialog.name,
             step: 1,
             totalSteps: dialog.steps.length
-          }
+          })
         }
 
         resetSessionSkill(context)
 
         return dialogFunc(context, next)
       }
-    } as DialogCapability
-
-    app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Dialog][IOPA.Version] =
-      BOT.VERSION
+    })
   }
 
-  invoke(context, next) {
+  async invoke(
+    context: IopaBotContext,
+    next: () => Promise<void>
+  ): Promise<void> {
     if (context['urn:bot:dialog:invoke']) {
       const dialogId = context['urn:bot:dialog:invoke']
-      return context[SERVER.Capabilities][BOT.CAPABILITIES.Dialog].beginDialog(
-        dialogId,
-        context,
-        next
-      )
+      await context
+        .capability('urn:io.iopa.bot:dialog')
+        .beginDialog(dialogId, context, next)
+      return Promise.resolve(null)
     }
 
-    if (!context[BOT.Intent]) return next()
+    if (!context[BOT.Intent]) {
+      return next()
+    }
     // must have an intent to process dialog
 
-    console.log('>> skill', context[BOT.Session][BOT.Skill])
-    console.log('>> intent', context[BOT.Intent])
-    console.log('>> dialog', context[BOT.Session][BOT.CurrentDialog])
-
-    if (!context[BOT.Session][BOT.CurrentDialog])
-      return this._matchBeginDialog(context, next)
+    console.log('>> skill', context.get('bot.Session').get('bot.Skill'))
+    console.log('>> intent', context.get('bot.Intent'))
+    console.log(
+      '>> dialog',
+      context.get('bot.Session').get('bot.CurrentDialog')
+    )
+    if (!context.get('bot.Session').get('bot.CurrentDialog')) {
+      await this._matchBeginDialog(context, next)
+      return Promise.resolve(null)
+    }
 
     return this._continueDialog(context, next)
   }
 
-  private _matchBeginDialog(context, next) {
+  private async _matchBeginDialog(
+    context: IopaBotContext,
+    next
+  ): Promise<void> {
+    let dialogFunc: FC | null = null
 
-    let dialogFunc: Iopa.FC | null = null
-
-    for (var key in this.dialogs) {
+    Object.keys(this.dialogs).some(key => {
       const dialog = this.dialogs[key]
 
-      if (typeof dialog.steps[0] != 'function') {
-        let intents = (dialog.steps[0] as unknown) as Array<string>
-        if (intents.includes(context[BOT.Intent]) || intents.includes('*')) {
-          dialogFunc = dialog.steps[1] as Iopa.FC
-          context[BOT.Session][BOT.CurrentDialog] = {
+      if (typeof dialog.steps[0] !== 'function') {
+        const intents = (dialog.steps[0] as unknown) as Array<string>
+        if (
+          intents.includes(context.get('bot.Intent')) ||
+          intents.includes('*')
+        ) {
+          dialogFunc = dialog.steps[1] as FC
+          context.get('bot.Session').set('bot.CurrentDialog', {
             name: dialog.name,
             step: 2,
             totalSteps: dialog.steps.length
-          }
+          })
           resetSessionSkill(context)
-          break
+          return true // break
         }
       }
-    }
+      return false // continue
+    })
 
-    if (dialogFunc) return dialogFunc(context, next)
-    else return next()
+    if (dialogFunc) {
+      return dialogFunc(context, next)
+    }
+    return next()
   }
 
-  private _continueDialog(context, next) {
-    var sessionDialog = context[BOT.Session][BOT.CurrentDialog]
+  private async _continueDialog(context: IopaBotContext, next): Promise<void> {
+    const sessionDialog = context
+      .get('bot.Session')
+      .get('bot.CurrentDialog') as BotSessionDialogLegacy
 
-    var dialog = this.dialogs[sessionDialog.name]
+    const dialog = this.dialogs[sessionDialog.name]
 
     if (!dialog) {
-        // not a recognized flow but do not clear in case its a V2 dialog 
-      // with invalid consumer input, in which case we need to retain the 
-      // current dialog information to continue after the 
+      // not a recognized flow but do not clear in case its a V2 dialog
+      // with invalid consumer input, in which case we need to retain the
+      // current dialog information to continue after the
       return this._matchBeginDialog(context, next)
     }
 
     if (sessionDialog.step >= dialog.steps.length) {
       // was at end of dialog so just clear
-      context[BOT.Session][BOT.CurrentDialog] = null
-      context[BOT.Session][BOT.LastDialogEndedDate] = new Date().getTime()
+      context.get('bot.Session').set('bot.CurrentDialog', null)
+      context.get('bot.Session').set('bot.LastDialogEndedDate', Date.now())
       resetSessionSkill(context)
       return this._matchBeginDialog(context, next)
     }
 
     let intentFilter: string[] | null
-    let dialogFunc: Iopa.FC
+    let dialogFunc: FC
 
     intentFilter = dialog.steps[sessionDialog.step] as string[]
 
-    if (typeof intentFilter == 'function') {
+    if (typeof intentFilter === 'function') {
       // Dialog step has no intent filter, invoke dialogFunc
       dialogFunc = intentFilter
       intentFilter = null
@@ -185,17 +201,18 @@ export default class DialogManager {
       return this._matchBeginDialog(context, next)
     } else {
       // Match with current dialog step intent filter, advance and invoke dialogFunc
-      sessionDialog.step++
-      dialogFunc = dialog.steps[sessionDialog.step] as Iopa.FC
+      sessionDialog.step += 1
+      dialogFunc = dialog.steps[sessionDialog.step] as FC
     }
 
-    sessionDialog.step++
+    sessionDialog.step += 1
 
-    return dialogFunc(context, next)
+    await dialogFunc(context, next)
+    return Promise.resolve(null)
   }
 }
 
-function resetSessionSkill(context: Iopa.Context) {
-  context[BOT.Session][BOT.Skill] = 'default'
-  delete context[BOT.Session][BOT.SkillVersion]
+function resetSessionSkill(context: IopaBotContext) {
+  context.get('bot.Session').set('bot.Skill', 'default')
+  context.get('bot.Session').delete('bot.SkillVersion')
 }

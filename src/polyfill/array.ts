@@ -1,3 +1,4 @@
+/* eslint-disable */
 /** ES6 Array Polyfill */
 if (!Array.prototype.includes) {
   Object.defineProperty(Array.prototype, 'includes', {

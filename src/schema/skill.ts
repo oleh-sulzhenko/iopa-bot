@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /*
  * Iopa Bot Framework
- * Copyright (c) 2016-2019 Internet of Protocols Alliance
+ * Copyright (c) 2016-2020 Internet of Protocols Alliance
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +17,16 @@
  */
 
 import * as Utterances from 'alexa-utterances'
+import {
+  FC,
+  BotSkill,
+  BotIntent,
+  BotIntentSchema,
+  BotIntentSchemaAlexa
+} from 'iopa-types'
+import { BOT } from '../constants'
 
-import * as Iopa from 'iopa'
-
-const BOT = require('../constants').BOT
-
-interface Intent {
-  name: string
-  function: Iopa.FC
-  schema?: any
-}
-
-export default class Skill {
+export default class Skill implements BotSkill {
   /** unique short name of the skill */
   public name: string
 
@@ -41,7 +40,7 @@ export default class Skill {
   public dictionaries: { [key: string]: string[] }
 
   /**  The itents that this skill can process */
-  public intents: { [key: string]: Intent }
+  public intents: { [key: string]: BotIntent }
 
   /**  global skills are always used in parsing;  non-global only parsed when launched */
   private _global: boolean
@@ -85,26 +84,31 @@ export default class Skill {
 
     const intent = Object.keys(this.intents)
       .map(key => this.intents[key])
-      .find(intent => intent.schema.utterances.join(':') == searchKey)
+      .find(intentfind => intentfind.schema.utterances.join(':') === searchKey)
 
     return intent ? intent.name : undefined
   }
 
   /** register a new intent handler for this skill  */
-  intent(intentName: string, func: Iopa.FC): this
-  intent(intentName: string, schema: any, func?: Iopa.FC): this
-  intent(intentName: string, schema: any | Iopa.FC, func?: Iopa.FC): this {
+  intent(intentName: string, func: FC): this
 
-    if (intentName.indexOf(' ') > -1) { throw new Error(`Intent cannot be registered with spaces in the name "${intentName}"`)}
+  intent(intentName: string, schema: any, func?: FC): this
 
-    if (typeof schema == 'function') {
-      func = schema as Iopa.FC
+  intent(intentName: string, schema: any | FC, func?: FC): this {
+    if (intentName.indexOf(' ') > -1) {
+      throw new Error(
+        `Intent cannot be registered with spaces in the name "${intentName}"`
+      )
+    }
+
+    if (typeof schema === 'function') {
+      func = schema as FC
       schema = null
     }
 
     this.intents[intentName] = {
       name: intentName,
-      function: func as Iopa.FC
+      function: func as FC
     }
 
     if (schema) {
@@ -116,76 +120,72 @@ export default class Skill {
 
   /** register a new dictionary for this skill  */
   dictionary(dictionary: { [key: string]: string[] }): this {
-    for (var attrname in dictionary) {
+    Object.keys(dictionary).forEach(attrname => {
       this.dictionaries[attrname] = dictionary[attrname]
-    }
+    })
     return this
   }
 
   /** @deprecated For alexa-app compatiabilty, just register Intent handler of "urn:io.iopa.bot:launch" */
-  launch(func: Iopa.FC) {
+  launch(func: FC) {
     this.intent(BOT.INTENTS.Launch, func)
     return this
   }
 
   /** @deprecated For alexa-app compatiabilty,ust register Intent handler of "urn:io.iopa.bot:sessionended" */
-  sessionEnded(func: Iopa.FC) {
+  sessionEnded(func: FC) {
     this.intent(BOT.INTENTS.SessionEnded, func)
     return this
   }
 
   /** Export Helper Function to extract the schema and generate a schema JSON object */
   schema(): string {
-    var schema = {
-        intents: [] as any[]
-      },
-      intentName,
-      intent,
-      key
-    for (intentName in this.intents) {
-      intent = this.intents[intentName]
-      var intentSchema: any = {
+    const schema = {
+      intents: [] as BotIntentSchemaAlexa[]
+    }
+
+    Object.keys(this.intents).forEach(intentName => {
+      const intent: BotIntent = this.intents[intentName]
+      const intentSchema: BotIntentSchemaAlexa = {
         intent: intent.name,
         slots: []
       }
       if (intent.schema) {
         if (intent.schema.slots) {
-          for (key in intent.schema.slots) {
+          Object.keys(intent.schema.slots).forEach(key => {
             intentSchema.slots.push({
               name: key,
               type: intent.schema.slots[key]
             })
-          }
+          })
         }
       }
       schema.intents.push(intentSchema)
-    }
+    })
     return JSON.stringify(schema, null, 3)
   }
 
   /** Export Helper Function to generate a list of sample utterances */
   utterances(): string {
-    var intentName,
-      intent,
-      out = ''
-    for (intentName in this.intents) {
+    let intent
+    let out = ''
+
+    Object.keys(this.intents).forEach(intentName => {
       intent = this.intents[intentName]
       if (intent.schema && intent.schema.utterances) {
-        const _this = this
-        intent.schema.utterances.forEach(function(sample) {
-          var list = Utterances(
+        intent.schema.utterances.forEach(sample => {
+          const list = Utterances(
             sample,
             intent.schema.slots,
-            _this.dictionaries,
-            _this.exhaustiveUtterances
+            this.dictionaries,
+            this.exhaustiveUtterances
           )
-          list.forEach(function(utterance) {
-            out +=
-              intent.name + '\t' + utterance.replace(/\s+/g, ' ').trim() + '\n'
+          list.forEach(utterance => {
+            out += `${intent.name}\t${utterance.replace(/\s+/g, ' ').trim()}\n`
           })
         })
       }
-    }
+    })
     return out
   }
 }
