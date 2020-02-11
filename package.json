@@ -1,11 +1,25 @@
 {
   "name": "iopa-bot",
   "version": "3.0.0",
+  "description": "API-First Bot Framework for Internet of Things (IoT), based on Internet of Protocols Alliance (IOPA) specification",
   "main": "dist/index.js",
   "ts:main": "src/index.ts",
   "types": "src/index.ts",
-  "description": "API-First Bot Framework for Internet of Things (IoT), based on Internet of Protocols Alliance (IOPA) specification",
   "author": "iopa <build@iopa.io>",
+  "engines": {
+    "node": ">= 4.0"
+  },
+  "homepage": "http://iopa.io",
+  "keywords": [
+    "iopa",
+    "serverless",
+    "lambda",
+    "azure function",
+    "google cloud function",
+    "node",
+    "bot",
+    "conversational agent"
+  ],
   "license": "Apache-2.0",
   "maintainers": [
     {
@@ -17,31 +31,19 @@
     "type": "git",
     "url": "https://github.com/iopa-io/iopa-bot.git"
   },
-  "keywords": [
-    "iopa",
-    "serverless",
-    "lambda",
-    "azure function",
-    "google cloud function",
-    "node",
-    "bot",
-    "conversational agent"
-  ],
-  "engines": {
-    "node": ">= 4.0"
-  },
   "scripts": {
     "build": "rm -rf ./dist && tsc",
     "lint": "berun-scripts lint"
   },
-  "homepage": "http://iopa.io",
   "dependencies": {
     "alexa-utterances": "^0.2.1",
-    "iopa": "3.0.0",
-    "reactive-cards": "0.5.32",
-    "reactive-dialogs": "0.5.31"
+    "iopa": "^3.0.0",
+    "iopa-types": "^3.0.0",
+    "reactive-cards": "^0.5.32",
+    "reactive-dialogs": "^0.5.31"
   },
   "devDependencies": {
+    "iopa-bot-console": "^1.4.2"
   },
   "peerDependencies": {}
 }
