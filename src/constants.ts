@@ -60,7 +60,7 @@ export const BOT = {
     Skills: 'urn:io.iopa.bot:skills',
     Dialog: 'urn:io.iopa.bot:dialog',
     ReactiveDialogs: 'urn:io.iopa.bot:reactive-dialogs',
-    Session: 'urn:io.iopa.bot:session',
+    Session: 'urn:io.iopa.bot:session'
   },
 
   VERSION: '2.0.0',
@@ -69,10 +69,10 @@ export const BOT = {
     Launch: 'urn:io.iopa.bot:launch',
     Yes: 'urn:io.iopa.bot:yesintent',
     No: 'urn:io.iopa.bot:nointent',
-    SessionEnded: 'urn:io.iopa.bot:sessionended',
-  },
+    SessionEnded: 'urn:io.iopa.bot:sessionended'
+  }
 }
 
 export default {
-  BOT,
+  BOT
 }

@@ -190,7 +190,7 @@ const REGEX3 = /^(\{.+\})$/
 function _parseText(
   textToParse: string,
   utterances: string[],
-  slots: string[],
+  slots: { [key: string]: string },
   dictionary: { [key: string]: string[] }
 ) {
   let text = textToParse
