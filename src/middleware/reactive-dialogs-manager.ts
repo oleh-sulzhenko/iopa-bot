@@ -176,7 +176,6 @@ export default class ReactiveDialogManager {
     //
     // Register well-known intent and default command handlers
     //
-
     app.intent(
       'reactivedialogs:intents:start',
       {

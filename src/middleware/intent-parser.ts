@@ -97,9 +97,9 @@ function parseSkillIntents(skill: BotSkill, context: IopaBotContext): boolean {
 
   if (context.get('bot.Intent') === 'urn:io.iopa.bot:intent:literal') {
     // Go through each intent in the skill to find a valid response.
-    Object.keys(skill.intents).some(key =>
-      _matchUtterancesForIntent(skill, utterances, context, key)
-    )
+    result = Object.keys(skill.intents).some(key => {
+      return _matchUtterancesForIntent(skill, utterances, context, key)
+    })
   } else {
     result = _matchUtterancesForIntent(
       skill,
@@ -183,7 +183,7 @@ function _matchUtterancesForIntent(
   return result.isValid
 }
 
-const REGEX = /[\s\n\r\t,!`()[]:;"?\/\\<+=>]+/
+const REGEX = /[\s\n\r\t,!`()[\]:;"?/\\<+=>]+/
 const REGEX2 = /{([a-zA-Z0-9_']+)\|([a-zA-Z0-9]+)}/
 const REGEX3 = /^(\{.+\})$/
 
