@@ -31,7 +31,6 @@ export default function parseIntent(
   const { skills } = context.capability('urn:io.iopa.bot:skills')
 
   context.set('bot.Slots', {})
-
   //
   // FIRST CHECK CURRENT SKILL (IF IN SESSION)
   //
@@ -199,10 +198,11 @@ function _parseText(
     pairs: [] as { name: string; value: string }[]
   }
 
-  utterances.forEach(template => {
+  utterances.some(template => {
     result = { isValid: true, pairs: [] }
 
     if (text === template) {
+      result.isValid = true
       return true // break
     }
 
@@ -211,12 +211,8 @@ function _parseText(
       text = text.replace(/(^\.+)|(\.+$)/g, '').toLowerCase()
 
       // Find all variables and fill in values.
-      const tokens = template.split(REGEX).filter(e => {
-        return e
-      })
-      const words = text.split(REGEX).filter(e => {
-        return e
-      }) // remove empty strings.
+      const tokens = template.split(REGEX).filter(Boolean)
+      const words = text.split(REGEX).filter(Boolean) // remove empty strings.
 
       if (tokens.length === words.length) {
         tokens.some((token, i) => {
