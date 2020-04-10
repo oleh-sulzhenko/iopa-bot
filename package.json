@@ -39,8 +39,8 @@
     "alexa-utterances": "^0.2.1",
     "iopa": "^3.0.0",
     "iopa-types": "^3.0.0",
-    "reactive-cards": "^0.5.32",
-    "reactive-dialogs": "^0.5.31"
+    "reactive-cards": "^1.0.2",
+    "reactive-dialogs": "^1.0.2"
   },
   "devDependencies": {
     "iopa-bot-console": "^1.4.2"
