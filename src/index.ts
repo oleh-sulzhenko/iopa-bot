@@ -1,12 +1,17 @@
 import {
   default as IopaBotFramework,
+  // @ts-ignore
   AppBotExtensions,
+  // @ts-ignore
   DialogApp,
+  // @ts-ignore
   SkillsCapability
 } from './iopa-bot-framework'
 
 import {
+  // @ts-ignore
   ReactiveDialogsCapability,
+  // @ts-ignore
   ReactiveDialogsSession,
   useReactiveDialogs
 } from './middleware/reactive-dialogs-manager'
