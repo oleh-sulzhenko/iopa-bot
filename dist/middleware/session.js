@@ -84,7 +84,7 @@ class SessionMiddleware {
                 context[constants_1.BOT.Address] &&
                 context[constants_1.BOT.Address][constants_1.BOT.User]) {
                 const session = yield sessiondb.get(context[constants_1.BOT.Address][constants_1.BOT.User]);
-                console.log("READ SESSION. SOURCE: " + context["urn:session:source"] + " Session:\n" + JSON.stringify(session, null, 2));
+                console.log("READ SESSION. SOURCE: " + context["urn:server:source"] + " Session:\n" + JSON.stringify(session, null, 2));
                 context[constants_1.BOT.Session] = session;
             }
             yield next();
@@ -95,10 +95,10 @@ class SessionMiddleware {
             else {
                 try {
                     yield sessiondb.put(context[constants_1.BOT.Session]);
-                    console.log("SAVED SESSION. SOURCE: " + context["urn:session:source"] + " Session:\n" + JSON.stringify(context[constants_1.BOT.Session], null, 2));
+                    console.log("SAVED SESSION. SOURCE: " + context["urn:server:source"] + " Session:\n" + JSON.stringify(context[constants_1.BOT.Session], null, 2));
                 }
                 catch (err) {
-                    console.log("SESSION ERROR. SOURCE: " + context["urn:session:source"] + " Session:\n" + JSON.stringify(context[constants_1.BOT.Session], null, 2) + "\nError: " + err);
+                    console.log("SESSION ERROR. SOURCE: " + context["urn:server:source"] + " Session:\n" + JSON.stringify(context[constants_1.BOT.Session], null, 2) + "\nError: " + err);
                 }
             }
         });
