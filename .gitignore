@@ -25,5 +25,5 @@ node_modules
 node_modules/
 
 # build directories
-build/
 dist/
+build/

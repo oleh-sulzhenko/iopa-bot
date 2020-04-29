@@ -79,7 +79,7 @@ export default class SessionMiddleware implements Iopa.Component {
             id: id,
             updated: new Date().getTime()
           }
-          db.put(dbpath, session)
+          await db.put(dbpath, session)
           return session
         } else {
           session.id = id
@@ -94,7 +94,7 @@ export default class SessionMiddleware implements Iopa.Component {
               id: id,
               updated: updated.getTime()
             }
-            db.put(dbpath, session)
+            await db.put(dbpath, session)
           }
         }
 
@@ -104,19 +104,18 @@ export default class SessionMiddleware implements Iopa.Component {
       /** put item into session storage */
       put: (session: Session) => {
         if (!this.app) {
-          return undefined
+          return
         }
 
         var dbpath = 'sessions/' + session.id
         session.updated = new Date().getTime()
-        db.put(dbpath, session)
-        return Promise.resolve(undefined)
+        return db.put(dbpath, session)
       },
 
       /** delete item from session storage */
       delete: (id: string) => {
         if (!this.app) {
-          return undefined
+          return
         }
 
         var dbpath = 'sessions/' + id
@@ -147,7 +146,6 @@ export default class SessionMiddleware implements Iopa.Component {
       context[BOT.Address][BOT.User]
     ) {
       const session = await sessiondb.get(context[BOT.Address][BOT.User])
-
       context[BOT.Session] = session
     }
 
