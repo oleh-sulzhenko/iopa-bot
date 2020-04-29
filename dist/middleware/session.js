@@ -33,7 +33,7 @@ class SessionMiddleware {
                         id: id,
                         updated: new Date().getTime()
                     };
-                    db.put(dbpath, session);
+                    yield db.put(dbpath, session);
                     return session;
                 }
                 else {
@@ -47,23 +47,22 @@ class SessionMiddleware {
                             id: id,
                             updated: updated.getTime()
                         };
-                        db.put(dbpath, session);
+                        yield db.put(dbpath, session);
                     }
                 }
                 return session;
             }),
             put: (session) => {
                 if (!this.app) {
-                    return undefined;
+                    return;
                 }
                 var dbpath = 'sessions/' + session.id;
                 session.updated = new Date().getTime();
-                db.put(dbpath, session);
-                return Promise.resolve(undefined);
+                return db.put(dbpath, session);
             },
             delete: (id) => {
                 if (!this.app) {
-                    return undefined;
+                    return;
                 }
                 var dbpath = 'sessions/' + id;
                 return db.delete(dbpath);
