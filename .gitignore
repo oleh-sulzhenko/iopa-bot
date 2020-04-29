@@ -25,4 +25,5 @@ node_modules
 node_modules/
 
 # build directories
+dist/
 build/
