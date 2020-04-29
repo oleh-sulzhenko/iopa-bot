@@ -146,7 +146,6 @@ export default class SessionMiddleware implements Iopa.Component {
       context[BOT.Address][BOT.User]
     ) {
       const session = await sessiondb.get(context[BOT.Address][BOT.User])
-      console.log("READ SESSION. SOURCE: " + context["urn:server:source"] + " Session:\n" + JSON.stringify(session, null, 2))
       context[BOT.Session] = session
     }
 
@@ -158,12 +157,7 @@ export default class SessionMiddleware implements Iopa.Component {
     ) {
       await sessiondb['delete'](context[BOT.Session].id)
     } else {
-      try {
-        await sessiondb.put(context[BOT.Session])
-        console.log("SAVED SESSION. SOURCE: " + context["urn:server:source"] + " Session:\n" + JSON.stringify(context[BOT.Session], null, 2))
-      } catch (err) {
-        console.log("SESSION ERROR. SOURCE: " + context["urn:server:source"] + " Session:\n" + JSON.stringify(context[BOT.Session], null, 2) + "\nError: " + err)
-      }
+      await sessiondb.put(context[BOT.Session])
     }
   }
 }
