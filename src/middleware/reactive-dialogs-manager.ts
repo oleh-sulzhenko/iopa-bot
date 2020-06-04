@@ -50,7 +50,7 @@ export function useReactiveDialogs(context: IopaBotContext) {
 export const useBotSession = (context: IopaBotContext) =>
   [
     context[BOT.Session] as ReactiveDialogsSession,
-    newState => {
+    (newState) => {
       context.set(
         'bot.Session',
         newState
@@ -91,9 +91,9 @@ export default class ReactiveDialogManager {
 
   private commandHandlers: Map<string, CommandHandler>
 
-  private _localResourceProtocolMapper: (
-    partialUrl: string
-  ) => string = partialUrl => partialUrl || ''
+  private _localResourceProtocolMapper: (partialUrl: string) => string = (
+    partialUrl
+  ) => partialUrl || ''
 
   /** public IOPA constructor used to register this capability */
   constructor(app) {
@@ -379,7 +379,7 @@ export default class ReactiveDialogManager {
     }
 
     const dialogSeqNo = flow.props.children.findIndex(
-      directive =>
+      (directive) =>
         directive.type === 'dialog' && directive.props.id === dialogId
     )
 
@@ -463,12 +463,12 @@ export default class ReactiveDialogManager {
     // /
 
     const intentFilters = lastPromptActions.map(
-      action =>
+      (action) =>
         action.props.intents || action.props.utterances || [toString(action)]
     )
 
     const selectedActionSeqNo = intentFilters.findIndex(
-      filters => filters.includes(intent) || filters.includes('*')
+      (filters) => filters.includes(intent) || filters.includes('*')
     )
 
     if (selectedActionSeqNo === -1) {
@@ -477,10 +477,10 @@ export default class ReactiveDialogManager {
 
       const nextStep: DialogElement | undefined =
         flow.props.children.find(
-          findDialog => findDialog.props.id === notUnderstoodDialog
+          (findDialog) => findDialog.props.id === notUnderstoodDialog
         ) ||
         flow.props.children.find(
-          findDialog => findDialog.props.id === notUnderstoodSkill
+          (findDialog) => findDialog.props.id === notUnderstoodSkill
         )
 
       if (nextStep) {
@@ -559,7 +559,7 @@ export default class ReactiveDialogManager {
 
   /** helper method to register a jsx flow or table element in this capability's inventory  */
   protected register(
-    app: IopaBotApp,
+    app: IopaBotApp<any>,
     jsx: (value: {}) => FlowElement | TableElement,
     meta: { [key: string]: string } = {}
   ): void {
@@ -584,7 +584,7 @@ export default class ReactiveDialogManager {
       const lists = flow.props.children
       this.tableMeta[tableId] = { lists: [], ...meta }
 
-      lists.forEach(list => {
+      lists.forEach((list) => {
         const listid = list.props.id
         const items = list.props.children
         this.tableLists[listid] = items
@@ -620,7 +620,7 @@ export default class ReactiveDialogManager {
     // Register all intents used in this flow
     //
 
-    flow.props.children.forEach(dialog => {
+    flow.props.children.forEach((dialog) => {
       this.registerDialogStep(dialog, skill)
     })
 
@@ -657,10 +657,10 @@ export default class ReactiveDialogManager {
   protected registerDialogStep(dialog: DialogElement, skill: Skill) {
     dialog.props.children
       .filter(
-        dialogChild =>
+        (dialogChild) =>
           dialogChild.type === 'card' || typeof dialogChild.type === 'function'
       )
-      .forEach(dialogChild => {
+      .forEach((dialogChild) => {
         if (dialogChild.type === 'card') {
           this.registerDialogCard(dialogChild as CardElement, skill)
         } else {
@@ -690,8 +690,8 @@ export default class ReactiveDialogManager {
   /** helper method to register a single card in this skills inventory  */
   protected registerDialogCard(card: CardElement, skill: Skill) {
     card.props.children
-      .filter(cardChild => cardChild.type === 'actionset')
-      .forEach(actionset => {
+      .filter((cardChild) => cardChild.type === 'actionset')
+      .forEach((actionset) => {
         this.registerDialogCardActions(actionset as ActionSetElement, skill)
       })
 
@@ -704,8 +704,8 @@ export default class ReactiveDialogManager {
     skill: Skill
   ) {
     actionset.props.children
-      .filter(action => action.type === 'action')
-      .forEach(action => {
+      .filter((action) => action.type === 'action')
+      .forEach((action) => {
         const response = toString(action).toLowerCase()
         const utterances = action.props.utterances || [response]
         const name = this.registerUtterances(
@@ -724,7 +724,7 @@ export default class ReactiveDialogManager {
     utterances: string[],
     skill: Skill
   ): string {
-    const schemaUtterances = utterances.map(s => s.toLowerCase()).sort()
+    const schemaUtterances = utterances.map((s) => s.toLowerCase()).sort()
 
     const existingIntent = skill.lookupIntent(schemaUtterances)
 
@@ -805,7 +805,7 @@ export default class ReactiveDialogManager {
 
       const currentDialogId: string = botSession[BOT.CurrentDialog].id
       const currentSeq = flow.props.children.findIndex(
-        dialog => dialog.props.id === currentDialogId
+        (dialog) => dialog.props.id === currentDialogId
       )
       if (currentSeq < flow.props.children.length - 1) {
         dialogStep = flow.props.children[currentSeq + 1]
@@ -814,7 +814,7 @@ export default class ReactiveDialogManager {
         dialogStep = flow.props.children[0]
       }
     } else if (dialogId) {
-      dialogStep = flow.props.children.find(c => c.props.id === dialogId)
+      dialogStep = flow.props.children.find((c) => c.props.id === dialogId)
       if (!dialogStep) {
         console.error(`Step ${dialogId} not found on dialog ${flowId};`)
         return Promise.resolve()
@@ -913,7 +913,7 @@ export default class ReactiveDialogManager {
       }
 
       const currentSeq = flow.props.children.findIndex(
-        d => d.props.id === dialog.props.id
+        (d) => d.props.id === dialog.props.id
       )
       if (currentSeq !== -1) {
         const nextStep = flow.props.children[currentSeq + 1]
@@ -986,14 +986,14 @@ export default class ReactiveDialogManager {
   ): Promise<boolean> {
     const [botSession, setBotSession] = useBotSession(context)
     const actionset: ActionSetElement | undefined = element.props.children.find(
-      child => child.type === 'actionset'
+      (child) => child.type === 'actionset'
     ) as ActionSetElement | undefined
 
     if (actionset) {
       //
       // render openurl as submit
       //
-      actionset.props.children.forEach(action => {
+      actionset.props.children.forEach((action) => {
         const { props } = action
         if (props.type === 'openurl') {
           props.type = 'submit'
@@ -1028,7 +1028,7 @@ export default class ReactiveDialogManager {
     const [botSession, setBotSession] = useBotSession(context)
     const currentDialog: SessionCurrentDialog = botSession[BOT.CurrentDialog]!
     const actionset = element.props.children.find(
-      actionsetfind => actionsetfind.type === 'actionset'
+      (actionsetfind) => actionsetfind.type === 'actionset'
     ) as ActionSetElement | undefined
 
     if (!actionset) {
@@ -1036,7 +1036,7 @@ export default class ReactiveDialogManager {
     }
 
     currentDialog.lastPromptActions = actionset.props.children.filter(
-      action => action.type === 'action'
+      (action) => action.type === 'action'
     )
 
     setBotSession({ [BOT.CurrentDialog]: currentDialog })
@@ -1165,12 +1165,12 @@ export default class ReactiveDialogManager {
   }
 }
 
-const toString = child => {
+const toString = (child) => {
   return child.props.children.join('')
 }
 
 const delay = (context, interval) => {
-  return new Promise<void>(resolve => {
+  return new Promise<void>((resolve) => {
     setTimeout(resolve, context.response[BOT.isDelayDisabled] ? 40 : interval)
   })
 }
@@ -1186,7 +1186,7 @@ function camelize(str) {
 export function getJsonFromUrl(url) {
   const query = url.substr(1)
   const result = {}
-  query.split('&').forEach(part => {
+  query.split('&').forEach((part) => {
     const item = part.split('=')
     result[item[0]] = decodeURIComponent(item[1])
   })
