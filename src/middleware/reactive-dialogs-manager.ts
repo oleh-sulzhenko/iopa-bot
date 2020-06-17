@@ -325,7 +325,7 @@ export default class ReactiveDialogManager {
 
     console.log('>> skill', botSession[BOT.Skill])
     console.log('>> intent', context[BOT.Intent])
-    console.log('>> dialog', botSession[BOT.CurrentDialog] ? botSession[BOT.CurrentDialog].id : "")
+    console.log('>> dialog', JSON.stringify(botSession[BOT.CurrentDialog] ? botSession[BOT.CurrentDialog].id : "", null, 2))
 
     //
     // Check if we are checking for a new session or continuing an existing session
@@ -347,7 +347,7 @@ export default class ReactiveDialogManager {
     const flowId = this.launchIntentsToFlows[intent]
 
     if (!flowId) {
-      console.log('No current dialog, and could not find as launch intent')
+      console.log('No current V2 dialog, and could not find as launch intent')
       // TO DO: Check for global '*'
       return next()
     }
@@ -638,9 +638,6 @@ export default class ReactiveDialogManager {
         const items = list.props.children
         this.tableLists[listid] = items
           ; (this.tableMeta[tableId].lists as string[]).push(listid)
-
-        console.log(` registered table ${tableId}  list ${list.props.id}`)
-
       })
       return
     }
@@ -701,8 +698,6 @@ export default class ReactiveDialogManager {
         this.launchIntentsToFlows[launchName] = flowId
       }
     }
-
-    console.log(`registered dialog flow ${flowId}`);
   }
 
   /** helper method to register a single dialog step in this skills inventory  */

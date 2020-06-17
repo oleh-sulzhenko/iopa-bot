@@ -113,7 +113,7 @@ export default class DialogManager {
 
     console.log('>> skill', context[BOT.Session][BOT.Skill])
     console.log('>> intent', context[BOT.Intent])
-    console.log('>> dialog', context[BOT.Session][BOT.CurrentDialog])
+    console.log('>> dialog', JSON.stringify(context[BOT.Session][BOT.CurrentDialog], null, 2))
 
     if (!context[BOT.Session][BOT.CurrentDialog])
       return this._matchBeginDialog(context, next)
