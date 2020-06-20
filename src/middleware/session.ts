@@ -46,15 +46,26 @@ export interface SessionDbCapability {
 }
 
 export default class SessionMiddleware implements Iopa.Component {
+  enabled: boolean
   app: Iopa.App | null
   db: Db | null
 
   constructor(app: Iopa.App) {
+
+    if (app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Session]) {
+      // Already registered
+      this.enabled = false  
+      return
+    }
+    this.enabled = true
+
     if (
       !app.properties[SERVER.Capabilities]['urn:io.iopa.database:session'] &&
       !app.properties[SERVER.Capabilities]['urn:io.iopa.database']
     )
+    {
       throw new Error('Session Middleware requires database middleware')
+    }
 
     this.app = app
 
@@ -134,6 +145,7 @@ export default class SessionMiddleware implements Iopa.Component {
   }
 
   async invoke(context, next) {
+    if (!this.enabled) return next()
     if (!this.app) return Promise.resolve()
 
     const sessiondb = this.app.properties[SERVER.Capabilities][
