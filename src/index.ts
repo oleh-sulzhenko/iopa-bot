@@ -1,26 +1,23 @@
 import {
   default as IopaBotFramework,
-  // @ts-ignore
+} from './iopa-bot-framework'
+
+export type {
   AppBotExtensions,
-  // @ts-ignore
   DialogApp,
-  // @ts-ignore
   SkillsCapability
 } from './iopa-bot-framework'
 
 import {
-  // @ts-ignore
-  ReactiveDialogsCapability,
-  // @ts-ignore
-  ReactiveDialogsSession,
   useReactiveDialogs
 } from './middleware/reactive-dialogs-manager'
 
-export type AppBotExtensions = AppBotExtensions
-export type DialogApp = DialogApp
-export type SkillsCapability = SkillsCapability
-export type ReactiveDialogsCapability = ReactiveDialogsCapability
-export type ReactiveDialogsSession = ReactiveDialogsSession
+export type {
+  ReactiveDialogsCapability,
+} from './middleware/reactive-dialogs-manager'
+
+export { Session as SessionManager, useBotSession } from './middleware/session'
+export type { SessionDbCapability, ReactiveDialogsSession, ReactiveDialogsSession as BotSession } from './middleware/session' 
 
 export { useReactiveDialogs }
 export { IopaBotFramework as default }

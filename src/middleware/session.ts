@@ -18,6 +18,7 @@
 import * as Iopa from 'iopa'
 const { IOPA, SERVER } = Iopa.constants
 import { BOT } from '../constants'
+import type { ActionElement } from 'reactive-dialogs'
 
 interface Db {
   get<T>(path: string): Promise<T | null>
@@ -45,16 +46,76 @@ export interface SessionDbCapability {
   dispose()
 }
 
+export interface SessionCurrentDialog {
+  /* current step id */
+  id: string
+  /** version of the IOPA dialogs manager */
+  iopaBotVersion: '2.0'
+  /** sequence number of the directive last executed in the current dialog step */
+  lastDirective: number | null
+  /** id of step rendered before this one (for return logic) */
+  previousId: string
+  /** last set of actions prompted to participant */
+  lastPromptActions: ActionElement[] | null
+}
+
+/** Dialogs Session passed to every context record */
+export interface ReactiveDialogsSession {
+  'id': string
+  /** id of the dialog step being executed in the current skill */
+  'bot:CurrentDialog': SessionCurrentDialog | null
+  /** timestamp that the last dialog step ended */
+  'bot:LastDialogEndedDate': number | null
+  /** Flag indicating whether this intent is the first for this session */
+  'bot:NewSession': boolean
+  /** id of the current executing bot session */
+  'bot:Skill': string
+  /** V2 semversion of the current executing bot session;  checked in case flow definition upgraded mid conversation */
+  'bot:SkillVersion': string
+  /** Skill data for current request */
+  'bot:Slots': string
+  /** property bag of all data collected in current skill session, including silent properties specifed on card actions */
+  'bot:Variables': any
+  /** was the last delivered item a multi-choice prompt */
+  'isMultiChoicePrompt': boolean
+  [key:string]: any
+}
+
+export const useBotSession = (context: Iopa.Context) =>
+  [
+    context[BOT.Session] as Partial<ReactiveDialogsSession>,
+    (newState: Partial<ReactiveDialogsSession>) => {
+      context[BOT.Session] = 
+        newState
+          ? Object.assign(context[BOT.Session], newState)
+          : { id: context[BOT.Session].id }
+
+      return context[SERVER.Capabilities][BOT.CAPABILITIES.Session]
+        .put(context[BOT.Session])
+    }
+  ] as [Partial<ReactiveDialogsSession>, (newState: Partial<ReactiveDialogsSession>) => Promise<void>]
+
 export default class SessionMiddleware implements Iopa.Component {
+  enabled: boolean
   app: Iopa.App | null
   db: Db | null
 
   constructor(app: Iopa.App) {
+
+    if (app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Session]) {
+      // Already registered
+      this.enabled = false  
+      return
+    }
+    this.enabled = true
+
     if (
       !app.properties[SERVER.Capabilities]['urn:io.iopa.database:session'] &&
       !app.properties[SERVER.Capabilities]['urn:io.iopa.database']
     )
+    {
       throw new Error('Session Middleware requires database middleware')
+    }
 
     this.app = app
 
@@ -134,6 +195,7 @@ export default class SessionMiddleware implements Iopa.Component {
   }
 
   async invoke(context, next) {
+    if (!this.enabled) return next()
     if (!this.app) return Promise.resolve()
 
     const sessiondb = this.app.properties[SERVER.Capabilities][

@@ -71,6 +71,10 @@ export default class DialogManager {
           return next()
         }
 
+        if (context['urn:bot:dialog:invoke']) {
+          context[BOT.Session][BOT.Skill] = 'default'
+        }
+
         let dialogFunc = dialog.steps[0] as Iopa.FC
 
         if (typeof dialogFunc != 'function') {
@@ -113,7 +117,7 @@ export default class DialogManager {
 
     console.log('>> skill', context[BOT.Session][BOT.Skill])
     console.log('>> intent', context[BOT.Intent])
-    console.log('>> dialog', context[BOT.Session][BOT.CurrentDialog])
+    console.log('>> dialog', JSON.stringify(context[BOT.Session][BOT.CurrentDialog], null, 2))
 
     if (!context[BOT.Session][BOT.CurrentDialog])
       return this._matchBeginDialog(context, next)

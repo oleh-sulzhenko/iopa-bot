@@ -66,7 +66,6 @@ class SkillsManager {
   private defaultSkill: Skill
 
   constructor(app: Iopa.App & AppBotExtensions) {
-    console.log('REGISTERED SKILLS MANAGER on ' + app.properties[SERVER.AppId])
     app.properties[SERVER.Capabilities][BOT.CAPABILITIES.Skills] = {
       verbose: false,
       timeout: 300000, // session timeout in milliseconds, 0 to disable
@@ -102,7 +101,6 @@ class SkillsManager {
     app.use(IntentParserMiddleware, "iopa-bot-IntentParserMiddleware")
     app.use(ReactiveDialogsMiddleware, "iopa-bot-ReactiveDialogsMiddleware")
     app.use(DialogManagerMiddleware, "iopa-bot-DialogManagerMiddleware")
-    console.log("registered iopa-bot middleware")
   }
 }
 
