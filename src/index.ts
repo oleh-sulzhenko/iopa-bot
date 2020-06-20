@@ -14,11 +14,10 @@ import {
 
 export type {
   ReactiveDialogsCapability,
-  ReactiveDialogsSession,
 } from './middleware/reactive-dialogs-manager'
 
-export { Session as SessionManager} from './middleware/session'
-export type { SessionDbCapability } from './middleware/session' 
+export { Session as SessionManager, useBotSession } from './middleware/session'
+export type { SessionDbCapability, ReactiveDialogsSession, ReactiveDialogsSession as BotSession } from './middleware/session' 
 
 export { useReactiveDialogs }
 export { IopaBotFramework as default }

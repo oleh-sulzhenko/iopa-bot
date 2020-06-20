@@ -18,6 +18,7 @@ import { BOT } from '../constants'
 import Skill from '../schema/skill'
 import { asyncForEachIfTrue } from '../util/forEachAsync'
 import { parse_url } from '../polyfill/parse_url'
+import { SessionCurrentDialog, useBotSession } from './session'
 
 /** Custom command handlers return true if should continue after, false to stop current flow */
 export type CommandHandler = (
@@ -78,56 +79,11 @@ interface ReactiveDialogsCapabilityPrivate extends ReactiveDialogsCapability {
   _localResourceProtocolMapper: (partial_url: string) => string
 }
 
-export interface SessionCurrentDialog {
-  /* current step id */
-  id: string
-  /** version of the IOPA dialogs manager */
-  iopaBotVersion: '2.0'
-  /** sequence number of the directive last executed in the current dialog step */
-  lastDirective: number | null
-  /** id of step rendered before this one (for return logic) */
-  previousId: string
-  /** last set of actions prompted to participant */
-  lastPromptActions: ActionElement[] | null
-}
-
-/** Reactive Dialogs Session passed to every context record */
-export interface ReactiveDialogsSession {
-  /** id of the dialog step being executed in the current skill */
-  'bot:CurrentDialog': SessionCurrentDialog | null
-  /** timestamp that the last dialog step ended */
-  'bot:LastDialogEndedDate': number | null
-  /** Flag indicating whether this intent is the first for this session */
-  'bot:NewSession': boolean
-  /** id of the current executing bot session */
-  'bot:Skill': string
-  /** V2 semversion of the current executing bot session;  checked in case flow definition upgraded mid conversation */
-  'bot:SkillVersion': string
-  /** Skill data for current request */
-  'bot:Slots': string
-  /** property bag of all data collected in current skill session, including silent properties specifed on card actions */
-  'bot:Variables': any
-}
-
 export const useReactiveDialogs = (context: Iopa.Context) => {
   return context[SERVER.Capabilities][
     BOT.CAPABILITIES.ReactiveDialogs
   ] as ReactiveDialogsCapability
 }
-
-export const useBotSession = (context: Iopa.Context) =>
-  [
-    context[BOT.Session] as ReactiveDialogsSession,
-    newState => {
-      context[BOT.Session] = newState
-        ? Object.assign(context[BOT.Session], newState)
-        : { id: context[BOT.Session]['id'] }
-
-      return context[SERVER.Capabilities][BOT.CAPABILITIES.Session].put(
-        context[BOT.Session]
-      )
-    }
-  ] as [ReactiveDialogsSession, (newState) => Promise<void>]
 
 const RDM_VERSION = '2.0'
 

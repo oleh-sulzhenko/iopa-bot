@@ -71,6 +71,10 @@ export default class DialogManager {
           return next()
         }
 
+        if (context['urn:bot:dialog:invoke']) {
+          context[BOT.Session][BOT.Skill] = 'default'
+        }
+
         let dialogFunc = dialog.steps[0] as Iopa.FC
 
         if (typeof dialogFunc != 'function') {
