@@ -29,6 +29,8 @@ export type CommandHandler = (
 
 const defaultPauseInterval = 200
 
+const STARTS_WITH_EXTERNAL_REGEXP = /^(http|https|ftp|tel|sms)/i
+
 /** Reactive Dialogs Capability 'urn:io.iopa.bot:reactive-dialogs' */
 export interface ReactiveDialogsCapability {
   /** register a reactives-dialog flow or table in the engine; it will not be rendered until renderFlow is called */
@@ -995,14 +997,18 @@ export default class ReactiveDialogManager {
 
     if (actionset) {
       //
-      // render openurl as submit
+      // render openurl as submit for non external links
       //
       actionset.props.children.forEach(action => {
-        if (action.props.type === 'openurl') {
+        if (action.props.type === 'openurl' && !(STARTS_WITH_EXTERNAL_REGEXP.test(action.props.url))) {
           action.props.type = 'submit'
           action.props.data = action.props.utterances
             ? action.props.utterances[0]
             : toString(action).toLowerCase()
+        } else {
+          action.props.data = action.props.utterances
+          ? action.props.utterances[0]
+          : toString(action).toLowerCase()
         }
       })
 

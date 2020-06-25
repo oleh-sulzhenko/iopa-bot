@@ -24,7 +24,7 @@ interface URL {
 }
 
 export function parse_url(url): URL  {
-  var match = url.match(/^(http|https|ftp|dialog|command|)?(?:[\:\/]*)([a-z0-9\.-]*)(?:\:([0-9]+))?(\/[^?#]*)?(?:\?([^#]*))?(?:#(.*))?$/i);
+  var match = url.match(/^(http|https|ftp|dialog|tel|sms|command|)?(?:[\:\/]*)([a-z0-9\.-]*)(?:\:([0-9]+))?(\/[^?#]*)?(?:\?([^#]*))?(?:#(.*))?$/i);
   var ret  = new Object() as URL
 
   ret['protocol'] = '';
