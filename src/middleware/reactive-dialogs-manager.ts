@@ -1090,6 +1090,8 @@ export default class ReactiveDialogManager {
         return Promise.resolve(false)
       case 'https:':
       case 'http:':
+      case 'tel:':
+      case 'sms:':
         await this.renderActionCommand('openurl', { url }, element, context)
         return Promise.resolve(false)
       case 'command:':
