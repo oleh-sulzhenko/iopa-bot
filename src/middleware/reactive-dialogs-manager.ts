@@ -996,20 +996,19 @@ export default class ReactiveDialogManager {
     ) as ActionSetElement | undefined
 
     if (actionset) {
-      //
-      // render openurl as submit for non external links
-      //
+      
       actionset.props.children.forEach(action => {
-        if (action.props.type === 'openurl' && !(STARTS_WITH_EXTERNAL_REGEXP.test(action.props.url))) {
-          action.props.type = 'submit'
-          action.props.data = action.props.utterances
-            ? action.props.utterances[0]
-            : toString(action).toLowerCase()
-        } else {
-          action.props.data = action.props.utterances
-          ? action.props.utterances[0]
-          : toString(action).toLowerCase()
-        }
+        if (action.props.type === 'openurl') {
+          //
+          // render openurl as submit for non external links
+          //
+          if (!(STARTS_WITH_EXTERNAL_REGEXP.test(action.props.url))) {
+            action.props.type = 'submit'
+          }
+            action.props.data = action.props.utterances
+              ? action.props.utterances[0]
+              : toString(action).toLowerCase()
+          } 
       })
 
       await setBotSession({ [BOT.isMultiChoicePrompt]: true })
