@@ -115,9 +115,9 @@ export default class DialogManager {
     if (!context[BOT.Intent]) return next()
     // must have an intent to process dialog
 
-    console.log('>> skill', context[BOT.Session][BOT.Skill])
-    console.log('>> intent', context[BOT.Intent])
-    console.log('>> dialog', JSON.stringify(context[BOT.Session][BOT.CurrentDialog], null, 2))
+    console.log('> skill', context[BOT.Session][BOT.Skill])
+    console.log('> intent', context[BOT.Intent])
+    console.log('> dialog', JSON.stringify(context[BOT.Session][BOT.CurrentDialog], null, 2))
 
     if (!context[BOT.Session][BOT.CurrentDialog])
       return this._matchBeginDialog(context, next)

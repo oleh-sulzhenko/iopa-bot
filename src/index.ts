@@ -16,7 +16,7 @@ export type {
   ReactiveDialogsCapability,
 } from './middleware/reactive-dialogs-manager'
 
-export { Session as SessionManager, useBotSession } from './middleware/session'
+export { default as SessionManager, useBotSession } from './middleware/session'
 export type { SessionDbCapability, ReactiveDialogsSession, ReactiveDialogsSession as BotSession } from './middleware/session' 
 
 export { useReactiveDialogs }

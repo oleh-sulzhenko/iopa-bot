@@ -208,7 +208,9 @@ export default class SessionMiddleware implements Iopa.Component {
       context[BOT.Address][BOT.User]
     ) {
       const session = await sessiondb.get(context[BOT.Address][BOT.User])
-      context[BOT.Session] = session
+      context[BOT.Session] = session || {}
+    } else {
+      context[BOT.Session] = {}
     }
 
     await next()
