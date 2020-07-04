@@ -31,13 +31,13 @@ Some bot frameworks such as the Microsoft Bot Framework already do a lot of this
    of the app challenging (e.g., associating users across multiple third party networks).
 2. Others such as alexa-app, do not provide a full-featured way of handling dialogs of multiple exchanges
 3. Defining the meta data for natural language processing is sometimes handled by the service provider (e.g., Amazon Alexa, IBM Watson) and mostly not.
-4. Chat bots are ripe for serverless functions on Amazon Lambda, Azure Functions, etc., but not all frameworks make this abstraction easy.
+4. Chat bots are ripe for edge functions on Amazon Lambda, Azure Functions, etc., but not all frameworks make this abstraction easy.
 
 ## The `iopa-bot` solution
 
 This framework provides a lightweight abstraction layer to translate the request and response into a format
 that can be reused regardless of the host environment, and can be used locally for console testing just as easily as remotely. It sits on top
-of iopa-serverless so can be used in any serverless environment, locally on an express server, or on custom infrastructure.
+of iopa-edge so can be used in any edge environment, locally on an express server, or on custom infrastructure.
 
 `iopa-bot` provides an opinionated way to define converational schemas, with industry-standard features such as dialogs, intents, slots, and utterances and exports this
 metadata for direct loading into the service provider (e.g., Amazon Alexa).
@@ -53,13 +53,13 @@ npm install iopa-bot
 ## Example App
 
 ```js
-const iopaServerless = require('./iopa-serverless'),
+const iopaEdge = require('./iopa-edge'),
   iopa = require('iopa').App,
   connector_slack = require('./connectors/slack'),
   iopaBotFramework = require('./iopa-bot'),
   bot_helloworld = require('./bot-skills/helloworld')
 
-module.exports = iopaServerless.azure(function(context) {
+module.exports = iopaEdge.azure(function(context) {
   var app = new iopa()
   app.use(connector_slack)
   app.use(iopaBotFramework)
@@ -176,7 +176,7 @@ application domain. Some skills (e.g., weather) may be shared across multiple bo
 Each exchange between a human and a bot (or two bots) is managed in a virtual session. This is not necessarily and in fact unlikely to be a transport
 session, but does allow for session context data to be persisted across the duration of the session.
 
-A session may be handled by (serverless) cloud functions running across multiple regions or infrastructure, so the persistence (provided by the connector or
+A session may be handled by (edge) cloud functions running across multiple regions or infrastructure, so the persistence (provided by the connector or
 source service provider) can be thought of as a temporary global data store unique to this session.
 
 ### Intents
