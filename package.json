@@ -1,7 +1,7 @@
 {
   "name": "iopa-bot",
   "version": "3.0.0",
-  "description": "API-First Bot Framework for Internet of Things (IoT), based on Internet of Protocols Alliance (IOPA) specification",
+  "description": "API-First Bot Framework for Internet of Things (IoT), based on Internet Open Protocol Alliance (IOPA) specification",
   "main": "dist/index.js",
   "ts:main": "src/index.ts",
   "types": "src/index.ts",

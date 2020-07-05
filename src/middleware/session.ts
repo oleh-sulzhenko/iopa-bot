@@ -1,6 +1,6 @@
 /*
  * Iopa Bot Framework
- * Copyright (c) 2016-2020 Internet of Protocols Alliance
+ * Copyright (c) 2016-2020 Internet Open Protocol Alliance
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,11 +28,11 @@ import { IopaMap } from 'iopa'
 import { BOT } from '../constants'
 
 export default class SessionMiddleware implements Component {
-  app: IopaBotApp
+  app: IopaBotApp<{}>
 
   db: ISimpleDatabase
 
-  constructor(app: IopaBotApp) {
+  constructor(app: IopaBotApp<{}>) {
     if (
       !app.capability('urn:io.iopa.database:session') &&
       !app.capability('urn:io.iopa.database')

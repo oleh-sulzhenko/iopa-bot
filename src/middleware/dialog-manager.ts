@@ -1,6 +1,6 @@
 /*
  * Iopa Bot Framework
- * Copyright (c) 2016-2020 Internet of Protocols Alliance
+ * Copyright (c) 2016-2020 Internet Open Protocol Alliance
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,11 +40,11 @@ class Dialog implements BotDialog {
 type DialogStep = string[] | FC
 
 export default class DialogManager {
-  app: IopaBotApp
+  app: IopaBotApp<{}>
 
   dialogs: { [key: string]: Dialog } = {}
 
-  constructor(app: IopaBotApp) {
+  constructor(app: IopaBotApp<{}>) {
     this.app = app
 
     this.app.dialog = (name, ...args) => {
@@ -133,7 +133,7 @@ export default class DialogManager {
   ): Promise<void> {
     let dialogFunc: FC | null = null
 
-    Object.keys(this.dialogs).some(key => {
+    Object.keys(this.dialogs).some((key) => {
       const dialog = this.dialogs[key]
 
       if (typeof dialog.steps[0] !== 'function') {

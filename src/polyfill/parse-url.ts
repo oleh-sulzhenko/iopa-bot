@@ -1,7 +1,7 @@
 /* eslint-disable prefer-destructuring */
 /*
 Copyright (c) 2015, Andreas F. Hoffmann
-Portions copyright (c) 2019 The Internet of Protocols Alliance (IOPA) Contributors
+Portions copyright (c) 2019 The Internet Open Protocol Alliance (IOPA) Contributors
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:

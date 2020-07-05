@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /*
  * Iopa Bot Framework
- * Copyright (c) 2016-2020 Internet of Protocols Alliance
+ * Copyright (c) 2016-2020 Internet Open Protocol Alliance
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,8 +83,10 @@ export default class Skill implements BotSkill {
     const searchKey = utterances.join(':')
 
     const intent = Object.keys(this.intents)
-      .map(key => this.intents[key])
-      .find(intentfind => intentfind.schema.utterances.join(':') === searchKey)
+      .map((key) => this.intents[key])
+      .find(
+        (intentfind) => intentfind.schema.utterances.join(':') === searchKey
+      )
 
     return intent ? intent.name : undefined
   }
@@ -120,7 +122,7 @@ export default class Skill implements BotSkill {
 
   /** register a new dictionary for this skill  */
   dictionary(dictionary: { [key: string]: string[] }): this {
-    Object.keys(dictionary).forEach(attrname => {
+    Object.keys(dictionary).forEach((attrname) => {
       this.dictionaries[attrname] = dictionary[attrname]
     })
     return this
@@ -144,7 +146,7 @@ export default class Skill implements BotSkill {
       intents: [] as BotIntentSchemaAlexa[]
     }
 
-    Object.keys(this.intents).forEach(intentName => {
+    Object.keys(this.intents).forEach((intentName) => {
       const intent: BotIntent = this.intents[intentName]
       const intentSchema: BotIntentSchemaAlexa = {
         intent: intent.name,
@@ -152,7 +154,7 @@ export default class Skill implements BotSkill {
       }
       if (intent.schema) {
         if (intent.schema.slots) {
-          Object.keys(intent.schema.slots).forEach(key => {
+          Object.keys(intent.schema.slots).forEach((key) => {
             intentSchema.slots.push({
               name: key,
               type: intent.schema.slots[key]
@@ -170,17 +172,17 @@ export default class Skill implements BotSkill {
     let intent
     let out = ''
 
-    Object.keys(this.intents).forEach(intentName => {
+    Object.keys(this.intents).forEach((intentName) => {
       intent = this.intents[intentName]
       if (intent.schema && intent.schema.utterances) {
-        intent.schema.utterances.forEach(sample => {
+        intent.schema.utterances.forEach((sample) => {
           const list = Utterances(
             sample,
             intent.schema.slots,
             this.dictionaries,
             this.exhaustiveUtterances
           )
-          list.forEach(utterance => {
+          list.forEach((utterance) => {
             out += `${intent.name}\t${utterance.replace(/\s+/g, ' ').trim()}\n`
           })
         })

@@ -1,6 +1,6 @@
 /*
  * Iopa Bot Framework
- * Copyright (c) 2016-9 Internet of Protocols Alliance
+ * Copyright (c) 2016-9 Internet Open Protocol Alliance
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 
-const iopaBotFramework = require('iopa-bot'),
-  iopa = require('iopa'),
-  BOT = iopaBotFramework.constants.BOT
+const iopaBotFramework = require('iopa-bot')
+const iopa = require('iopa')
+
+const { BOT } = iopaBotFramework.constants
 
 require('iopa-bot-console')
 
-var app = new iopa.App()
+const app = new iopa.App()
 
 // use connector and Bot Framework
 
@@ -39,18 +40,19 @@ app.intent(BOT.INTENTS.Launch, { utterances: ['/launch', '/open'] })
 
 // define dialogs
 
-app.dialog('/', [BOT.INTENTS.Launch], function(context, next) {
+app.dialog('/', [BOT.INTENTS.Launch], function dialog(context, next) {
   context.response.say('Hello!  Please converse with this bot. ').send()
 })
 
-app.intent('helloIntent', { utterances: ['hi', 'hello', 'hey'] }, function(
-  context,
-  next
-) {
-  context.response.say('Hello World').send()
-})
+app.intent(
+  'helloIntent',
+  { utterances: ['hi', 'hello', 'hey'] },
+  function helloIntent(context, next) {
+    context.response.say('Hello World').send()
+  }
+)
 
-var skill = app.skill('FeelingSkill')
+const skill = app.skill('FeelingSkill')
 
 skill.dictionary({
   I_AM_FEELING_PHRASE: ["I'm", "I'm feeling", 'I am', 'I am feeling', 'I feel']
@@ -93,7 +95,7 @@ skill.intent(
       '{I_AM_FEELING_PHRASE|IAmPhrase} {FEELING_MODIFIER|Modifier} {ANXIETY_KEY_WORDS|Feeling}'
     ]
   },
-  function(context, next) {
+  function iAmStressedOut(context, next) {
     context.response.say(JSON.stringify(context[BOT.Slots])).send()
   }
 )
@@ -105,9 +107,9 @@ console.log(skill.utterances())
 
 // build and listen
 
-app.dialog('/unknown', '*', function(context, next) {
+app.dialog('/unknown', '*', function unknownDialog(context, next) {
   context.response
-    .say("I don't know what you mean by " + context[BOT.Text])
+    .say(`I don't know what you mean by ${context[BOT.Text]}`)
     .send()
 })
 

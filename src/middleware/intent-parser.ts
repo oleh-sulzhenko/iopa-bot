@@ -1,6 +1,6 @@
 /*
  * Iopa Bot Framework
- * Copyright (c) 2016-2020 Internet of Protocols Alliance
+ * Copyright (c) 2016-2020 Internet Open Protocol Alliance
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ export default function parseIntent(
   //
   // CHECK ALL OTHER GLOBAL SKILLS
   //
-  Object.keys(skills).some(key => {
+  Object.keys(skills).some((key) => {
     const skill = skills[key]
 
     if (
@@ -96,7 +96,7 @@ function parseSkillIntents(skill: BotSkill, context: IopaBotContext): boolean {
 
   if (context.get('bot.Intent') === 'urn:io.iopa.bot:intent:literal') {
     // Go through each intent in the skill to find a valid response.
-    result = Object.keys(skill.intents).some(key => {
+    result = Object.keys(skill.intents).some((key) => {
       return _matchUtterancesForIntent(skill, utterances, context, key)
     })
   } else {
@@ -147,7 +147,7 @@ function _matchUtterancesForIntent(
 
   const utterances: string[] = []
 
-  allutterance.forEach(template => {
+  allutterance.forEach((template) => {
     // Get the intent name from this template line.
     const matches = template.match(/([/a-zA-Z0-9.:]+)\t/)
     if (matches && matches[1] === intentkey) {
@@ -173,7 +173,7 @@ function _matchUtterancesForIntent(
   if (result.isValid) {
     context.set('bot.Intent', intentkey)
     const newSlots: { [key: string]: string } = {}
-    result.pairs.forEach(pair => {
+    result.pairs.forEach((pair) => {
       newSlots[pair.name] = pair.value
     })
     context.set('bot.Slots', newSlots)
@@ -198,7 +198,7 @@ function _parseText(
     pairs: [] as { name: string; value: string }[]
   }
 
-  utterances.some(template => {
+  utterances.some((template) => {
     result = { isValid: true, pairs: [] }
 
     if (text === template) {
@@ -248,7 +248,7 @@ function _parseText(
                     isValidType = true
                   } else if (dictionary && dictionary[type]) {
                     isValidType = dictionary[type].some(
-                      dictionaryValue =>
+                      (dictionaryValue) =>
                         word.toLowerCase() === dictionaryValue.toLowerCase()
                     )
                   }

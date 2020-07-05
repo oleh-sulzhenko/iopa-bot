@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /*
  * Iopa Bot Framework
- * Copyright (c) 2016-2020 Internet of Protocols Alliance
+ * Copyright (c) 2016-2020 Internet Open Protocol Alliance
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ export default class IopaBotFramework {
 
   private skills: { [key: string]: BotSkill } = {}
 
-  constructor(app: IopaBotApp) {
+  constructor(app: IopaBotApp<{}>) {
     console.log(
       `REGISTERED SKILLS MANAGER on ${app.properties.get('server.AppId')}`
     )
@@ -41,14 +41,14 @@ export default class IopaBotFramework {
       timeout: 300000, // session timeout in milliseconds, 0 to disable
       skills: this.skills,
 
-      add: name => {
+      add: (name) => {
         if (!this.skills[name]) {
           this.skills[name] = new Skill(name)
         }
         return this.skills[name]
       },
 
-      skill: name => {
+      skill: (name) => {
         return this.skills[name]
       }
     })
