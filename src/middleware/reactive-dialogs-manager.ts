@@ -458,13 +458,14 @@ export default class ReactiveDialogManager {
       // was not in a prompt directive so just post the result to session bag
       // and continue with next directive or dialog
       //
-      return this.proceedToNextDirective(
+      this.proceedToNextDirective(
         context,
         flow,
         dialog,
         dialogSeqNo,
         lastDirective
       )
+      return next()
     } else {
       ///
       /// match intent to actions Element
