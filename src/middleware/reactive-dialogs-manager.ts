@@ -291,7 +291,7 @@ export default class ReactiveDialogManager {
     if (!botSession[BOT.CurrentDialog]) {
       return this._matchBeginFlow(context, next)
     } else {
-      return this._continueFlow(context, next) as Promise<void>
+      return this._continueFlow(context, next)
     }
 
   }
@@ -313,7 +313,7 @@ export default class ReactiveDialogManager {
     return reactive.renderFlow(flowId, null, context, next)
   }
 
-  private _continueFlow(context: Iopa.Context, next: () => Promise<void>) {
+  private async _continueFlow(context: Iopa.Context, next: () => Promise<void>): Promise<void> {
 
     const [botSession, setBotSession] = useBotSession(context)
     const intent: string = context[BOT.Intent]
@@ -458,13 +458,14 @@ export default class ReactiveDialogManager {
       // was not in a prompt directive so just post the result to session bag
       // and continue with next directive or dialog
       //
-      return this.proceedToNextDirective(
+      this.proceedToNextDirective(
         context,
         flow,
         dialog,
         dialogSeqNo,
         lastDirective
       )
+      return next()
     } else {
       ///
       /// match intent to actions Element
@@ -492,7 +493,8 @@ export default class ReactiveDialogManager {
           )
 
         if (nextStep) {
-          return this.renderDialogStep(flow, nextStep, context)
+          this.renderDialogStep(flow, nextStep, context)
+          return next()
         }
 
         // No matching intent for current flow dialog step, see if we should start another flow
@@ -507,29 +509,33 @@ export default class ReactiveDialogManager {
 
       switch (action.props.type) {
         case 'submit':
-          return this.proceedToNextDirective(
+          this.proceedToNextDirective(
             context,
             flow,
             dialog,
             dialogSeqNo,
             lastDirective
           )
+          return next()
 
         case 'openurl':
-          return this.renderActionOpenUrl(action as ActionOpenUrlElement, context)
+
+          await this.renderActionOpenUrl(action as ActionOpenUrlElement, context)
+          return next()
 
         default:
           console.log(
             `card type ${action.props.type} not yet supported in reactive-dialogs manager`
           )
-
-          return this.proceedToNextDirective(
+          
+          this.proceedToNextDirective(
             context,
             flow,
             dialog,
             dialogSeqNo,
             lastDirective
           )
+          return next()
       }
     }
   }
