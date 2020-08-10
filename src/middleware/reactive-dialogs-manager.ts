@@ -762,7 +762,7 @@ export default class ReactiveDialogManager {
   }
 
   /** find in inventory and render a specific flow and/or flow dialog step */
-  protected renderFlowById(
+  protected async renderFlowById(
     id: string | null | undefined,
     dialogId: string | null | undefined,
     context: Iopa.Context,
@@ -859,9 +859,7 @@ export default class ReactiveDialogManager {
       [BOT.Variables]: botSession[BOT.Variables] || {}
     })
 
-    setTimeout(() => {
-      this.renderDialogStep(flow, dialogStep, context)
-    }, 0)
+    await this.renderDialogStep(flow, dialogStep, context)
 
     return next()
 
