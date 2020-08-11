@@ -435,7 +435,8 @@ export default class ReactiveDialogManager {
         [BOT.LastDialogEndedDate]: new Date().getTime()
       })
 
-      return this.endFlow(context, { reason: 'last-response' })
+      await this.endFlow(context, { reason: 'last-response' })
+      return next()
     }
 
     const dialog = flow.props.children[dialogSeqNo]
@@ -458,7 +459,7 @@ export default class ReactiveDialogManager {
       // was not in a prompt directive so just post the result to session bag
       // and continue with next directive or dialog
       //
-      this.proceedToNextDirective(
+      await this.proceedToNextDirective(
         context,
         flow,
         dialog,
@@ -493,7 +494,7 @@ export default class ReactiveDialogManager {
           )
 
         if (nextStep) {
-          this.renderDialogStep(flow, nextStep, context)
+          await this.renderDialogStep(flow, nextStep, context)
           return next()
         }
 
@@ -509,7 +510,7 @@ export default class ReactiveDialogManager {
 
       switch (action.props.type) {
         case 'submit':
-          this.proceedToNextDirective(
+          await this.proceedToNextDirective(
             context,
             flow,
             dialog,
@@ -528,7 +529,7 @@ export default class ReactiveDialogManager {
             `card type ${action.props.type} not yet supported in reactive-dialogs manager`
           )
           
-          this.proceedToNextDirective(
+          await this.proceedToNextDirective(
             context,
             flow,
             dialog,
@@ -540,13 +541,13 @@ export default class ReactiveDialogManager {
     }
   }
 
-  protected proceedToNextDirective(
+  protected async proceedToNextDirective(
     context: Iopa.Context,
     flow: FlowElement,
     dialog: DialogElement,
     dialogSeqNo: number,
     lastDirective: number | null
-  ) {
+  ): Promise<void> {
     if (
       lastDirective !== null &&
       lastDirective < dialog.props.children.length - 1
@@ -931,7 +932,7 @@ export default class ReactiveDialogManager {
   }
 
   /** end the current flow if there is one being executed */
-  protected endFlow(context: Iopa.Context, props): Promise<void> {
+  protected async endFlow(context: Iopa.Context, props): Promise<void> {
     const [botSession, setBotSession] = useBotSession(context)
     console.log(`Ending dialog flow ${botSession[BOT.Skill]}`)
 
@@ -947,9 +948,8 @@ export default class ReactiveDialogManager {
       )
     }
 
-    setBotSession(null)
+    await setBotSession(null)
     context.response[BOT.ShouldEndSession] = true
-    return Promise.resolve()
   }
 
 
