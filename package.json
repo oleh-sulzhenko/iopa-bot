@@ -32,6 +32,7 @@
   },
   "scripts": {
     "build": "rm -rf ./dist && tsc",
+    "prepare": "npm run build",
     "lint": "berun-scripts lint"
   },
   "homepage": "http://iopa.io",
