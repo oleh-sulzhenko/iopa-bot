@@ -458,7 +458,7 @@ export default class ReactiveDialogManager {
       // was not in a prompt directive so just post the result to session bag
       // and continue with next directive or dialog
       //
-      this.proceedToNextDirective(
+      await this.proceedToNextDirective(
         context,
         flow,
         dialog,
@@ -493,7 +493,7 @@ export default class ReactiveDialogManager {
           )
 
         if (nextStep) {
-          this.renderDialogStep(flow, nextStep, context)
+          await this.renderDialogStep(flow, nextStep, context)
           return next()
         }
 
@@ -509,7 +509,7 @@ export default class ReactiveDialogManager {
 
       switch (action.props.type) {
         case 'submit':
-          this.proceedToNextDirective(
+          await this.proceedToNextDirective(
             context,
             flow,
             dialog,
@@ -528,7 +528,7 @@ export default class ReactiveDialogManager {
             `card type ${action.props.type} not yet supported in reactive-dialogs manager`
           )
           
-          this.proceedToNextDirective(
+          await this.proceedToNextDirective(
             context,
             flow,
             dialog,
@@ -540,13 +540,13 @@ export default class ReactiveDialogManager {
     }
   }
 
-  protected proceedToNextDirective(
+  protected async proceedToNextDirective(
     context: Iopa.Context,
     flow: FlowElement,
     dialog: DialogElement,
     dialogSeqNo: number,
     lastDirective: number | null
-  ) {
+  ): Promise<void> {
     if (
       lastDirective !== null &&
       lastDirective < dialog.props.children.length - 1
