@@ -435,7 +435,8 @@ export default class ReactiveDialogManager {
         [BOT.LastDialogEndedDate]: new Date().getTime()
       })
 
-      return this.endFlow(context, { reason: 'last-response' })
+      await this.endFlow(context, { reason: 'last-response' })
+      return next()
     }
 
     const dialog = flow.props.children[dialogSeqNo]
@@ -931,7 +932,7 @@ export default class ReactiveDialogManager {
   }
 
   /** end the current flow if there is one being executed */
-  protected endFlow(context: Iopa.Context, props): Promise<void> {
+  protected async endFlow(context: Iopa.Context, props): Promise<void> {
     const [botSession, setBotSession] = useBotSession(context)
     console.log(`Ending dialog flow ${botSession[BOT.Skill]}`)
 
@@ -947,9 +948,8 @@ export default class ReactiveDialogManager {
       )
     }
 
-    setBotSession(null)
+    await setBotSession(null)
     context.response[BOT.ShouldEndSession] = true
-    return Promise.resolve()
   }
 
 
