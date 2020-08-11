@@ -1,6 +1,6 @@
 {
   "name": "iopa-bot",
-  "version": "2.3.4",
+  "version": "2.3.5",
   "main": "dist/index.js",
   "ts:main": "src/index.ts",
   "types": "src/index.ts",
@@ -32,6 +32,7 @@
   },
   "scripts": {
     "build": "rm -rf ./dist && tsc",
+    "prepare": "npm run build",
     "lint": "berun-scripts lint"
   },
   "homepage": "http://iopa.io",
