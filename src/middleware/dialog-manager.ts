@@ -19,7 +19,6 @@ import {
   FC,
   IopaBotContext,
   BotDialog,
-  BotDialogStep,
   IopaBotApp,
   BotSessionDialogLegacy
 } from 'iopa-types'
@@ -29,7 +28,7 @@ import { BOT } from '../constants'
 class Dialog implements BotDialog {
   public name: string
 
-  public steps: BotDialogStep[]
+  public steps: DialogStep[]
 
   constructor(name, steps) {
     this.name = name
@@ -40,11 +39,11 @@ class Dialog implements BotDialog {
 type DialogStep = string[] | FC
 
 export default class DialogManager {
-  app: IopaBotApp<{}>
+  app: IopaBotApp
 
   dialogs: { [key: string]: Dialog } = {}
 
-  constructor(app: IopaBotApp<{}>) {
+  constructor(app: IopaBotApp) {
     this.app = app
 
     this.app.dialog = (name, ...args) => {
