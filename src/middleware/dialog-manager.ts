@@ -88,7 +88,7 @@ export default class DialogManager {
           })
         }
 
-        resetSessionSkill(context)
+        //  resetSessionSkill(context)
 
         return dialogFunc(context, next)
       }

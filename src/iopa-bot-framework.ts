@@ -27,70 +27,68 @@ import IntentParserMiddleware from './middleware/intent-parser'
 import Skill from './schema/skill'
 
 export default class IopaBotFramework {
-    private defaultSkill: BotSkill
+  private defaultSkill: BotSkill
 
-    private skills: { [key: string]: BotSkill } = {}
+  private skills: { [key: string]: BotSkill } = {}
 
-    constructor(app: IopaBotApp) {
-        console.log(
-            `REGISTERED SKILLS MANAGER on ${app.properties.get('server.AppId')}`
-        )
-        app.setCapability('urn:io.iopa.bot:skills', {
-            'iopa.Version': BOT.VERSION,
-            verbose: false,
-            timeout: 300000, // session timeout in milliseconds, 0 to disable
-            skills: this.skills,
+  constructor(app: IopaBotApp) {
+    console.log(
+      `REGISTERED SKILLS MANAGER on ${app.properties.get('server.AppId')}`
+    )
+    app.setCapability('urn:io.iopa.bot:skills', {
+      'iopa.Version': BOT.VERSION,
+      verbose: false,
+      timeout: 300000, // session timeout in milliseconds, 0 to disable
+      skills: this.skills,
 
-            add: (name) => {
-                if (!this.skills[name]) {
-                    this.skills[name] = new Skill(name)
-                }
-                return this.skills[name]
-            },
-
-            skill: (name) => {
-                return this.skills[name]
-            },
-        })
-
-        this.defaultSkill = app
-            .capability('urn:io.iopa.bot:skills')
-            .add('default')
-
-        app.intent = this.defaultSkill.intent.bind(this.defaultSkill)
-        app.dictionary = this.defaultSkill.dictionary.bind(this.defaultSkill)
-
-        app.skill = (name: string) => {
-            name = name || 'default'
-            return app.capability('urn:io.iopa.bot:skills').add(name)
+      add: (name) => {
+        if (!this.skills[name]) {
+          this.skills[name] = new Skill(name)
         }
+        return this.skills[name]
+      },
 
-        app.use((context: IopaBotContext, next: () => Promise<void>) => {
-            if (context.response) {
-                context.response.get =
-                    context.response.get ||
-                    ((key: any) => {
-                        return context.response[key]
-                    })
+      skill: (name) => {
+        return this.skills[name]
+      }
+    })
 
-                context.response.set =
-                    context.response.set ||
-                    ((key: any, value: any) => {
-                        context.response[key] = value
-                    })
+    this.defaultSkill = app.capability('urn:io.iopa.bot:skills').add('default')
 
-                context.response.set(
-                    'server.Capabilities',
-                    context.get('server.Capabilities')
-                )
-            }
-            return next()
-        }, 'iopa-bot-framework')
+    app.intent = this.defaultSkill.intent.bind(this.defaultSkill)
+    app.dictionary = this.defaultSkill.dictionary.bind(this.defaultSkill)
 
-        app.use(sessionMiddleware, 'iopa-bot-sessionMiddleware')
-        app.use(IntentParserMiddleware, 'iopa-bot-IntentParserMiddleware')
-        app.use(ReactiveDialogsMiddleware, 'iopa-bot-ReactiveDialogsMiddleware')
-        app.use(DialogManagerMiddleware, 'iopa-bot-DialogManagerMiddleware')
-        console.log('registered iopa-bot middleware')
+    app.skill = (name: string) => {
+      name = name || 'default'
+      return app.capability('urn:io.iopa.bot:skills').add(name)
     }
+
+    app.use((context: IopaBotContext, next: () => Promise<void>) => {
+      if (context.response) {
+        context.response.get =
+          context.response.get ||
+          ((key: any) => {
+            return context.response[key]
+          })
+
+        context.response.set =
+          context.response.set ||
+          (((key: any, value: any) => {
+            context.response[key] = value
+          }) as any)
+
+        context.response.set(
+          'server.Capabilities',
+          context.get('server.Capabilities')
+        )
+      }
+      return next()
+    }, 'iopa-bot-framework')
+
+    app.use(sessionMiddleware, 'iopa-bot-sessionMiddleware')
+    app.use(IntentParserMiddleware, 'iopa-bot-IntentParserMiddleware')
+    app.use(ReactiveDialogsMiddleware, 'iopa-bot-ReactiveDialogsMiddleware')
+    app.use(DialogManagerMiddleware, 'iopa-bot-DialogManagerMiddleware')
+    console.log('registered iopa-bot middleware')
+  }
 }

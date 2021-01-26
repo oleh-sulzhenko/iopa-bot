@@ -6,5 +6,7 @@ export { BOT, default as constants } from './constants'
 
 export {
   ReactiveDialogsSession,
-  IReactiveDialogsCapability as ReactiveDialogsCapability,
+  IReactiveDialogsCapability as ReactiveDialogsCapability
 } from 'iopa-types'
+
+export { useBotSession } from './middleware/reactive-dialogs-manager'
