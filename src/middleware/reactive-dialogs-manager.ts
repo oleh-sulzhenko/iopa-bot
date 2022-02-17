@@ -19,6 +19,7 @@ import Skill from '../schema/skill'
 import { asyncForEachIfTrue } from '../util/forEachAsync'
 import { parse_url } from '../polyfill/parse_url'
 import { SessionCurrentDialog, useBotSession } from './session'
+import Url from 'url'
 
 /** Custom command handlers return true if should continue after, false to stop current flow */
 export type CommandHandler = (
@@ -1002,10 +1003,17 @@ export default class ReactiveDialogManager {
     if (actionset) {
       
       actionset.props.children.forEach(action => {
-        if (action.props.type === 'openurl') {
-          //
+        
+        let isUrl : boolean
+        try {
+          isUrl = Boolean(parse_url(action.props.url))
+        } catch (error) {
+          isUrl = false
+        }
+        if (/openurl/gi.test(action.props.type) || isUrl) {
+          
           // render openurl as submit for non external links
-          //
+          
           if (!(STARTS_WITH_EXTERNAL_REGEXP.test(action.props.url))) {
             action.props.type = 'submit'
           }
