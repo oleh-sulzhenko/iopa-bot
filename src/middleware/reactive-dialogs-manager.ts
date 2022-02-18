@@ -999,12 +999,12 @@ export default class ReactiveDialogManager {
     const actionset: ActionSetElement | undefined = element.props.children.find(
       child => child.type == 'actionset'
     ) as ActionSetElement | undefined
+    let isUrl : boolean
 
     if (actionset) {
       
       actionset.props.children.forEach(action => {
         
-        let isUrl : boolean
         try {
           isUrl = Boolean(parse_url(action.props.url))
         } catch (error) {
@@ -1038,7 +1038,7 @@ export default class ReactiveDialogManager {
 
     await delay(context, pause || defaultPauseInterval)
 
-    return !card.actions || (card.actions.length == 0)
+    return !card.actions || (card.actions.length == 1 && isUrl) || card.actions.length == 0
   }
 
 
@@ -1065,7 +1065,7 @@ export default class ReactiveDialogManager {
       elements.length === 1 &&
       isUrl
 
-    if (!actionset || isJustALink) {
+    if (isJustALink) {
       return
     }
 
