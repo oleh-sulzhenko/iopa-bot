@@ -1047,15 +1047,17 @@ export default class ReactiveDialogManager {
     const currentDialog: SessionCurrentDialog = botSession[BOT.CurrentDialog]!
     const actionset = element.props.children.find((actionset) => actionset.type == 'actionset') as
       | ActionSetElement
-      | undefined
+    | undefined
+    
+    const elements = actionset.props.children as CardElement[]
 
     const isJustALink =
-      actionset.props.children.length === 1 &&
-      actionset.props.children.some((action) => {
+      elements.length === 1 &&
+      elements.includes((action) => {
         let isUrl: boolean
         try {
           isUrl = Boolean(parse_url(action.props.url))
-        } catch (error) {
+        } catch (e) {
           isUrl = false
         }
         if (/openurl/gi.test(action.props.type) || isUrl) return true
