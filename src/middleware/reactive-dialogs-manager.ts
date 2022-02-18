@@ -1042,26 +1042,31 @@ export default class ReactiveDialogManager {
   }
 
 
-  private saveActionsFromCard(
-    element: CardElement,
-    context: Iopa.Context
-  ): void {
+  private saveActionsFromCard(element: CardElement, context: Iopa.Context): void {
     const [botSession, setBotSession] = useBotSession(context)
     const currentDialog: SessionCurrentDialog = botSession[BOT.CurrentDialog]!
-    const actionset = element.props.children.find(
-      actionset => actionset.type == 'actionset'
-    ) as ActionSetElement | undefined
+    const actionset = element.props.children.find((actionset) => actionset.type == 'actionset') as
+      | ActionSetElement
+      | undefined
 
-    if (!actionset) {
+    const isJustALink =
+      actionset.props.children.length === 1 &&
+      actionset.props.children.some((action) => {
+        let isUrl: boolean
+        try {
+          isUrl = Boolean(parse_url(action.props.url))
+        } catch (error) {
+          isUrl = false
+        }
+        if (/openurl/gi.test(action.props.type) || isUrl) return true
+        return false
+      })
+
+    if (!actionset || isJustALink) {
       return
     }
-
-    currentDialog.lastPromptActions = actionset.props.children.filter(
-      action => action.type == 'action'
-    )
-
-    setBotSession({ [BOT.CurrentDialog]: currentDialog })
   }
+
 
   protected renderAction(
     element: ActionElement,
