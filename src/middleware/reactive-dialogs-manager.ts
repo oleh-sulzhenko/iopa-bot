@@ -19,6 +19,7 @@ import Skill from '../schema/skill'
 import { asyncForEachIfTrue } from '../util/forEachAsync'
 import { parse_url } from '../polyfill/parse_url'
 import { SessionCurrentDialog, useBotSession } from './session'
+import Url from 'url'
 
 /** Custom command handlers return true if should continue after, false to stop current flow */
 export type CommandHandler = (
@@ -1002,10 +1003,17 @@ export default class ReactiveDialogManager {
     if (actionset) {
       
       actionset.props.children.forEach(action => {
-        if (action.props.type === 'openurl') {
-          //
+        
+        let isUrl : boolean
+        try {
+          isUrl = Boolean(parse_url(action.props.url))
+        } catch (error) {
+          isUrl = false
+        }
+        if (/openurl/gi.test(action.props.type) || isUrl) {
+          
           // render openurl as submit for non external links
-          //
+          
           if (!(STARTS_WITH_EXTERNAL_REGEXP.test(action.props.url))) {
             action.props.type = 'submit'
           }
@@ -1034,26 +1042,38 @@ export default class ReactiveDialogManager {
   }
 
 
-  private saveActionsFromCard(
-    element: CardElement,
-    context: Iopa.Context
-  ): void {
+  private saveActionsFromCard(element: CardElement, context: Iopa.Context): void {
     const [botSession, setBotSession] = useBotSession(context)
     const currentDialog: SessionCurrentDialog = botSession[BOT.CurrentDialog]!
-    const actionset = element.props.children.find(
-      actionset => actionset.type == 'actionset'
-    ) as ActionSetElement | undefined
+    const actionset = element.props.children.find((actionset) => actionset.type == 'actionset') as
+      | ActionSetElement
+    | undefined
+    
+    const elements: ActionElement[] = actionset.props.children
 
-    if (!actionset) {
+    let isUrl: boolean
+    try {
+      isUrl = Boolean(
+        parse_url(elements[0].props.url) &&
+          STARTS_WITH_EXTERNAL_REGEXP.test(elements[0].props.url)
+      )
+    } catch (e) {
+      isUrl = false
+    }
+
+    const isJustALink: boolean =
+      elements.length === 1 &&
+      isUrl
+
+    if (!actionset || isJustALink) {
       return
     }
 
-    currentDialog.lastPromptActions = actionset.props.children.filter(
-      action => action.type == 'action'
-    )
+    currentDialog.lastPromptActions = actionset.props.children.filter((action) => action.type == 'action')
 
     setBotSession({ [BOT.CurrentDialog]: currentDialog })
   }
+
 
   protected renderAction(
     element: ActionElement,
