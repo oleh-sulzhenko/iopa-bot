@@ -1038,7 +1038,7 @@ export default class ReactiveDialogManager {
 
     await delay(context, pause || defaultPauseInterval)
 
-    //  this is used as is not waiting for prompt
+    //  this is used as is not waiting for prompt, false will make it wait for user response
     return !card.actions || (card.actions.length == 1 && isUrl) || card.actions.length == 0
   }
 
