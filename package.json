@@ -39,8 +39,8 @@
   "dependencies": {
     "alexa-utterances": "^0.2.1",
     "iopa": "2.0.2",
-    "reactive-cards": "0.5.31",
-    "reactive-dialogs": "0.5.31"
+    "reactive-cards": "^1.2.0",
+    "reactive-dialogs": "^1.2.0"
   },
   "devDependencies": {
     "@types/node": "^12.7.11"

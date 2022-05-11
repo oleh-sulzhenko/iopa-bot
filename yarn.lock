@@ -30,14 +30,14 @@
   "resolved" "https://registry.npmjs.org/numbered/-/numbered-1.1.0.tgz"
   "version" "1.1.0"
 
-"reactive-cards@0.5.31":
-  "integrity" "sha512-eQV3gRCZ6nzXdSTThLNeBgTnIKagKOl6BdY+N5LshUlikoMlwzKpdDd6UvOz81F0xIvr3vyByYcX2JQYx4C8Vw=="
-  "resolved" "https://registry.npmjs.org/reactive-cards/-/reactive-cards-0.5.31.tgz"
-  "version" "0.5.31"
+"reactive-cards@^1.1.6", "reactive-cards@^1.2.0":
+  "integrity" "sha512-l24enXFHzlVT3Uc9/jhsk4t5O1Azst1KMINbKk8JOv+qPM0kV/YrdMTMed+h69VHk3S2D+ryt0YupmefPExUXg=="
+  "resolved" "https://registry.npmjs.org/reactive-cards/-/reactive-cards-1.2.0.tgz"
+  "version" "1.2.0"
 
-"reactive-dialogs@0.5.31":
-  "integrity" "sha512-z7kv3jN/YlYAd0u1eSd0LAPfC75f53HC682i3Y7LupWezV5fLBppk+54HO+DdeLLWh39XZd75JaaR+4iQfenxA=="
-  "resolved" "https://registry.npmjs.org/reactive-dialogs/-/reactive-dialogs-0.5.31.tgz"
-  "version" "0.5.31"
+"reactive-dialogs@^1.2.0":
+  "integrity" "sha512-RRxuapQSFw0Bjth6aKuzTrw+k777rVciKPRnpBiAJzW0UtEA9YPBRTW2z0gLsW5SOn8vNZFLTfHFI8YEiBAwrQ=="
+  "resolved" "https://registry.npmjs.org/reactive-dialogs/-/reactive-dialogs-1.2.0.tgz"
+  "version" "1.2.0"
   dependencies:
-    "reactive-cards" "0.5.31"
+    "reactive-cards" "^1.1.6"
