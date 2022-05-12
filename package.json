@@ -4,7 +4,7 @@
   "main": "dist/index.js",
   "ts:main": "src/index.ts",
   "types": "src/index.ts",
-  "description": "API-First Bot Framework for Internet of Things (IoT), based on Internet of Protocols Alliance (IOPA) specification",
+  "description": "OLEH BOT API-First Bot Framework for Internet of Things (IoT), based on Internet of Protocols Alliance (IOPA) specification",
   "author": "iopa <build@iopa.io>",
   "license": "Apache-2.0",
   "maintainers": [
